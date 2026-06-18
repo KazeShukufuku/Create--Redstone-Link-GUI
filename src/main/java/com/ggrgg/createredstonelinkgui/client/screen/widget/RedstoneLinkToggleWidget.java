@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.client.screen.widget;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
+import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
@@ -11,7 +12,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * A one-click toggle switch widget following Create's widget pattern.
@@ -90,7 +90,7 @@ public class RedstoneLinkToggleWidget extends AbstractSimiWidget {
     @Override
     public void onClick(double mouseX, double mouseY) {
         // Send toggle packet to server
-        PacketDistributor.sendToServer(new RedstoneLinkModeTogglePayload(pos));
+        CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkModeTogglePayload(pos));
 
         // Immediately toggle client-side block state for zero-latency visual feedback.
         // The server will send the authoritative state shortly after.

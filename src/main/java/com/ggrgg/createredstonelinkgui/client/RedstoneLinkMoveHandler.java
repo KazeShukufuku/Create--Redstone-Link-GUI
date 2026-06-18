@@ -1,7 +1,7 @@
 package com.ggrgg.createredstonelinkgui.client;
 
 import com.ggrgg.createredstonelinkgui.Config;
-import com.ggrgg.createredstonelinkgui.common.SableHelper;
+import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSupportBehaviour;
@@ -23,7 +23,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public class RedstoneLinkMoveHandler {
 
@@ -146,8 +145,8 @@ public class RedstoneLinkMoveHandler {
             return;
         }
 
-        // Check: source-to-target distance (sublevel-aware)
-        if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > effectiveRange * effectiveRange) {
+        // Check: source-to-target distance
+        if (Vec3.atCenterOf(sourcePos).distanceToSqr(Vec3.atCenterOf(pos)) > effectiveRange * effectiveRange) {
             invalidReason = "move_fail_range";
             showRedOutline(pos);
             return;
@@ -183,7 +182,7 @@ public class RedstoneLinkMoveHandler {
         }
 
         if (validTarget != null && validFace != null) {
-            PacketDistributor.sendToServer(new RedstoneLinkMovePayload(sourcePos, validTarget, validFace));
+            CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkMovePayload(sourcePos, validTarget, validFace));
             mc.player.displayClientMessage(
                     Component.translatable("gui.createredstonelinkgui.link_relocated"), true);
         } else if (invalidReason != null) {

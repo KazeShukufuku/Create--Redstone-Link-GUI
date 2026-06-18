@@ -1,37 +1,34 @@
 package com.ggrgg.createredstonelinkgui.common.network;
 
+import java.util.function.Supplier;
+
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.NetworkEvent;
 
-public record RedstoneLinkModeTogglePayload(BlockPos pos) implements CustomPacketPayload {
+public record RedstoneLinkModeTogglePayload(BlockPos pos) {
 
-    public static final Type<RedstoneLinkModeTogglePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("createredstonelinkgui", "link_mode_toggle"));
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, RedstoneLinkModeTogglePayload> CODEC = StreamCodec.composite(
-            BlockPos.STREAM_CODEC, RedstoneLinkModeTogglePayload::pos,
-            RedstoneLinkModeTogglePayload::new
-    );
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public static void encode(RedstoneLinkModeTogglePayload payload, FriendlyByteBuf buffer) {
+        buffer.writeBlockPos(payload.pos);
     }
 
-    public static void handleServer(RedstoneLinkModeTogglePayload payload, IPayloadContext context) {
+    public static RedstoneLinkModeTogglePayload decode(FriendlyByteBuf buffer) {
+        return new RedstoneLinkModeTogglePayload(buffer.readBlockPos());
+    }
+
+    public static void handle(RedstoneLinkModeTogglePayload payload, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
+            ServerPlayer player = context.getSender();
+            if (player == null) return;
+
             Level level = player.level();
             BlockPos pos = payload.pos();
 
-            // Verification check: Stop packets sent via malicious clients across distances
             if (player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) > 64.0) return;
 
             var state = level.getBlockState(pos);
@@ -40,5 +37,6 @@ public record RedstoneLinkModeTogglePayload(BlockPos pos) implements CustomPacke
                 level.scheduleTick(pos, linkBlock, 1);
             }
         });
+        context.setPacketHandled(true);
     }
 }

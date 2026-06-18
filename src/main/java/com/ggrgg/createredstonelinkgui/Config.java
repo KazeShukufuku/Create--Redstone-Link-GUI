@@ -1,13 +1,13 @@
 package com.ggrgg.createredstonelinkgui;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public class Config {
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
-    public static final ModConfigSpec.IntValue MOVE_RANGE = BUILDER
+    public static final ForgeConfigSpec.IntValue MOVE_RANGE = BUILDER
             .comment("Maximum distance in blocks a redstone link can be moved")
             .defineInRange("moveRange", 24, 1, 256);
 
-    static final ModConfigSpec SPEC = BUILDER.build();
+    static final ForgeConfigSpec SPEC = BUILDER.build();
 }

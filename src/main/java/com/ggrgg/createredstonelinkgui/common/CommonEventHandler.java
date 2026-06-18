@@ -15,11 +15,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.NetworkHooks;
 
-@EventBusSubscriber(modid = "createredstonelinkgui")
+@Mod.EventBusSubscriber(modid = "createredstonelinkgui")
 public class CommonEventHandler {
 
     @SubscribeEvent
@@ -35,8 +36,8 @@ public class CommonEventHandler {
         if (player.isShiftKeyDown()) return;
 
         // 3. Check if the block entity has a LinkBehaviour (redstone link frequency system).
-        //    This covers vanilla Create redstone links, Aeronautics receivers, and any
-        //    other mod's blocks that use the same Create frequency system.
+        //    This covers Create redstone links and any compatible blocks using the same
+        //    Create frequency behavior.
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null) return;
 
@@ -59,25 +60,14 @@ public class CommonEventHandler {
             be.setChanged();
             level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
 
-            serverPlayer.openMenu(new SimpleMenuProvider(
+            NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider(
                 (id, inv, p) -> new RedstoneLinkMenu(id, inv, pos),
                 Component.literal("Redstone Link Frequency")
-            ), buf -> buf.writeBlockPos(pos));
+            ), pos);
         }
 
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
     }
 
-    // == Legacy Aeronautics-specific string check (kept for reference) ==
-    //
-    // If you need to restrict to specific blocks rather than any LinkBehaviour holder,
-    // uncomment the method below and add `|| isAeronauticsReceiverClass(state)` to the
-    // condition above, alongside restoring a `BlockState state` variable.
-    //
-    // private static boolean isAeronauticsReceiverClass(BlockState state) {
-    //     String className = state.getBlock().getClass().getName();
-    //     return "dev.simulated_team.simulated.content.blocks.redstone.modulating_receiver.ModulatingLinkedReceiverBlock".equals(className)
-    //         || "dev.simulated_team.simulated.content.blocks.redstone.directional_receiver.DirectionalLinkedReceiverBlock".equals(className);
-    // }
 }

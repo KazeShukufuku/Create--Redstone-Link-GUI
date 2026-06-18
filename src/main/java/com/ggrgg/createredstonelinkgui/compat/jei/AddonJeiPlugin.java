@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 
 @JeiPlugin
 public class AddonJeiPlugin implements IModPlugin {
-    private static final ResourceLocation PLUGIN_ID = ResourceLocation.fromNamespaceAndPath("createredstonelinkgui", "jei_plugin");
+    private static final ResourceLocation PLUGIN_ID = new ResourceLocation("createredstonelinkgui", "jei_plugin");
 
     @Override
     public ResourceLocation getPluginUid() {

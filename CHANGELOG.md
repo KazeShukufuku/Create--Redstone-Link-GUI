@@ -1,5 +1,12 @@
 ## Changelog
 
+# 1.20.1-1.5.0
+
+- Port to Minecraft 1.20.1 and Forge 47.4.10
+- Update Create dependency to 6.0.8-291
+- Add runtime reference to Create: Connected 1.1.13
+- Remove legacy aviation/sublevel compatibility code
+
 # 1.21.1-1.5.0
 
 - Preserve factory gauge connection upon movement

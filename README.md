@@ -1,6 +1,6 @@
 ## Overview
 
-This mod is made to address one gripe I've alway had with create mod: Needing to have items on hand to set redstone link frequencies is just too inconvenient. The release of Aeronautics exacerbated this problem with how much redstone link usage it demands, motivating me to make this mod.
+This mod is made to address one gripe I've alway had with Create: needing to have items on hand to set redstone link frequencies is just too inconvenient.
 
 # How it works:
 
@@ -15,9 +15,37 @@ AI coded for the most part.
 
 ## Installation
 
+Original project:
+
 Modrinth: https://modrinth.com/mod/create-redstone-link-gui
 
-Curseforge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui
+CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui
+
+Fork / port:
+
+GitHub:
+
+CurseForge:
+
+---
+
+## Attribution
+
+This project is a fork of the original Create: Redstone Link GUI by Steven, licensed under the MIT License.
+
+This fork ports the mod to Minecraft 1.20.1 / Forge 47.4.10 / Create 6.0.8.
+
+Original project:
+
+Modrinth: https://modrinth.com/mod/create-redstone-link-gui
+
+CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui
+
+Fork / port links:
+
+GitHub:
+
+CurseForge:
 
 ---
 

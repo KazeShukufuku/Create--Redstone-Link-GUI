@@ -3,6 +3,8 @@ package com.ggrgg.createredstonelinkgui.common.menu;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
+import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -15,16 +17,16 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.RegistryObject;
 
 public class RedstoneLinkMenu extends AbstractContainerMenu {
     
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, "createredstonelinkgui");
     
-    public static final DeferredHolder<MenuType<?>, MenuType<RedstoneLinkMenu>> TYPE = MENUS.register("redstone_link_menu", 
-        () -> IMenuTypeExtension.create((windowId, inv, data) -> new RedstoneLinkMenu(windowId, inv, data.readBlockPos()))
+    public static final RegistryObject<MenuType<RedstoneLinkMenu>> TYPE = MENUS.register("redstone_link_menu",
+        () -> IForgeMenuType.create((windowId, inv, data) -> new RedstoneLinkMenu(windowId, inv, data.readBlockPos()))
     );
 
     private final BlockPos pos;
@@ -118,9 +120,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             }
 
             if (player.level().isClientSide()) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                    new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(this.pos, targetStack, slotId)
-                );
+                CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkFrequencyPayload(this.pos, targetStack, slotId));
             }
             return;
         }

@@ -1,51 +1,42 @@
 package com.ggrgg.createredstonelinkgui;
 
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
+import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 
-import net.minecraft.client.Minecraft;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
-// This class will not load on dedicated servers. Accessing client side code from here is safe.
-@Mod(value = CreateRedstoneLinkGUI.MODID, dist = Dist.CLIENT)
-// You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-@EventBusSubscriber(modid = CreateRedstoneLinkGUI.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = CreateRedstoneLinkGUI.MODID, value = Dist.CLIENT)
 public class CreateRedstoneLinkGUIClient {
-    public CreateRedstoneLinkGUIClient(ModContainer container) {
-        // Allows NeoForge to create a config screen for this mod's configs.
-        // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
-        // Do not forget to add translations for your config options to the en_us.json file.
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-    }
 
     @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
-        // Some client setup code
-        CreateRedstoneLinkGUI.LOGGER.info("HELLO FROM CLIENT SETUP");
-        CreateRedstoneLinkGUI.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
-    }
-
-    @SubscribeEvent
-    static void onClientTick(ClientTickEvent.Post event) {
-        RedstoneLinkMoveHandler.clientTick();
+    static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            RedstoneLinkMoveHandler.clientTick();
+        }
     }
 
     @SubscribeEvent
     static void onInputInteract(InputEvent.InteractionKeyMappingTriggered event) {
-        // Intercept right-click while in move mode
         if (event.isUseItem() && RedstoneLinkMoveHandler.isActive()) {
             if (RedstoneLinkMoveHandler.onRightClick()) {
                 event.setCanceled(true);
                 event.setSwingHand(false);
             }
+        }
+    }
+
+    @Mod.EventBusSubscriber(modid = CreateRedstoneLinkGUI.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static class ModBusEvents {
+        @SubscribeEvent
+        static void onClientSetup(FMLClientSetupEvent event) {
+            event.enqueueWork(() -> MenuScreens.register(RedstoneLinkMenu.TYPE.get(), RedstoneLinkConfigScreen::new));
         }
     }
 }
