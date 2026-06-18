@@ -43,6 +43,9 @@ repo/
 ### reference libraries ###
 /lib/
 
+### Generated icon previews ###
+/icon-previews/
+
 ### Logs ###
 *.log
 hs_err_pid*

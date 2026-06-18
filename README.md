@@ -15,17 +15,23 @@ AI coded for the most part.
 
 ## Installation
 
-Original project:
+**Original project:**
 
 Modrinth: https://modrinth.com/mod/create-redstone-link-gui
 
 CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui
 
-Fork / port:
+**Fork / port:**
 
-GitHub:
+GitHub: https://github.com/KazeShukufuku/Create--Redstone-Link-GUI
 
 CurseForge:
+
+---
+
+## Feedback
+
+If you encounter issues while playing this fork / port, please report them in this repository. Please do not report issues from this fork / port to the original author.
 
 ---
 
@@ -35,15 +41,15 @@ This project is a fork of the original Create: Redstone Link GUI by Steven, lice
 
 This fork ports the mod to Minecraft 1.20.1 / Forge 47.4.10 / Create 6.0.8.
 
-Original project:
+**Original project:**
 
 Modrinth: https://modrinth.com/mod/create-redstone-link-gui
 
 CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui
 
-Fork / port links:
+**Fork / port links:**
 
-GitHub:
+GitHub: https://github.com/KazeShukufuku/Create--Redstone-Link-GUI
 
 CurseForge:
 
