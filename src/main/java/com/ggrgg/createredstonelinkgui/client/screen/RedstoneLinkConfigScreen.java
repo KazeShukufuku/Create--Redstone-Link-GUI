@@ -6,10 +6,10 @@ import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWi
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
-import com.simibubi.create.foundation.gui.AllIcons;
-import com.simibubi.create.foundation.gui.widget.IconButton;
 
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -19,15 +19,40 @@ import net.minecraft.world.item.ItemStack;
 
 public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLinkMenu> {
 
-    private static final ResourceLocation BASE_TEXTURE = new ResourceLocation("minecraft", "textures/gui/container/inventory.png");
+    private static final ResourceLocation BASE_TEXTURE = new ResourceLocation("create", "textures/gui/player_inventory.png");
+    private static final ResourceLocation OVERLAY_TEXTURE = new ResourceLocation("createredstonelinkgui", "textures/redstone_link.png");
+
+    private static final int OVERLAY_WIDTH = 181;
+    private static final int OVERLAY_HEIGHT = 88;
+    private static final int BACKPACK_WIDTH = 175;
+    private static final int BACKPACK_HEIGHT = 108;
+    private static final int CONTENT_TOP_OFFSET = 6;
+    private static final int BACKPACK_TOP_OFFSET = 94;
+
+    private static final int UV_OFFSET_X = 16;
+    private static final int UV_OFFSET_Y = 160;
+
+    private static final int SLOT1_UV_X = 77;
+    private static final int SLOT1_UV_Y = 188;
+    private static final int SLOT2_UV_X = 113;
+    private static final int SLOT2_UV_Y = 188;
+    private static final int SLOT_SIZE = 16;
+
+    private static final int MOVE_UV_X = 26;
+    private static final int MOVE_UV_Y = 223;
+    private static final int BACK_UV_X = 165;
+    private static final int BACK_UV_Y = 223;
+    private static final int ICON_SIZE = 18;
+
+    private static final int TITLE_Y_OFFSET = 4;
 
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
 
     public RedstoneLinkConfigScreen(RedstoneLinkMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
-        this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageWidth = 256;
+        this.imageHeight = CONTENT_TOP_OFFSET + OVERLAY_HEIGHT + BACKPACK_HEIGHT + 6;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -35,12 +60,27 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void init() {
         super.init();
 
-        this.slot1Bounds = new Rect2i(this.leftPos + 53, this.topPos + 25, 18, 18);
-        this.slot2Bounds = new Rect2i(this.leftPos + 107, this.topPos + 25, 18, 18);
+        int x = (this.width - this.imageWidth) / 2;
+        int y = (this.height - this.imageHeight) / 2;
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
+        int contentTop = y + CONTENT_TOP_OFFSET;
+
+        this.slot1Bounds = new Rect2i(
+                contentLeft + (SLOT1_UV_X - UV_OFFSET_X),
+                contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
+                SLOT_SIZE,
+                SLOT_SIZE
+        );
+        this.slot2Bounds = new Rect2i(
+                contentLeft + (SLOT2_UV_X - UV_OFFSET_X),
+                contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
+                SLOT_SIZE,
+                SLOT_SIZE
+        );
 
         if (this.menu.isRedstoneLink()) {
             this.addRenderableWidget(new RedstoneLinkToggleWidget(
-                    this.leftPos + 14, this.topPos + 58,
+                    contentLeft + 65, contentTop + 64,
                     this.menu.getPos(),
                     () -> {
                         var level = this.minecraft.level;
@@ -55,13 +95,28 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
             ));
         }
 
-        IconButton relocateButton = new IconButton(this.leftPos + 80, this.topPos + 58, AllIcons.I_MOVE_GAUGE);
-        relocateButton.withCallback(() -> {
-            RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
-            this.minecraft.setScreen(null);
-        });
-        relocateButton.setToolTip(Component.translatable("gui.createredstonelinkgui.relocate"));
-        this.addRenderableWidget(relocateButton);
+        ImageButton moveButton = new ImageButton(
+                contentLeft + 10, contentTop + 63,
+                ICON_SIZE, ICON_SIZE,
+                OVERLAY_TEXTURE,
+                MOVE_UV_X, MOVE_UV_Y,
+                Component.translatable("gui.createredstonelinkgui.relocate"),
+                (btn) -> {
+                    RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
+                    this.minecraft.setScreen(null);
+                }
+        );
+        this.addRenderableWidget(moveButton);
+
+        ImageButton backButton = new ImageButton(
+                contentLeft + 149, contentTop + 63,
+                ICON_SIZE, ICON_SIZE,
+                OVERLAY_TEXTURE,
+                BACK_UV_X, BACK_UV_Y,
+                Component.translatable("gui.createredstonelinkgui.save_and_close"),
+                (btn) -> this.minecraft.setScreen(null)
+        );
+        this.addRenderableWidget(backButton);
     }
 
     public void updateFrequencySlot(int slotIndex, ItemStack stack) {
@@ -85,36 +140,58 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        graphics.blit(BASE_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-        graphics.fill(x + 7, y + 7, x + 169, y + 82, 0xFFC6C6C6);
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
+        int contentTop = y + CONTENT_TOP_OFFSET;
 
-        int s1x = this.slot1Bounds.getX();
-        int s1y = this.slot1Bounds.getY();
-        drawSlot(graphics, s1x, s1y);
-        graphics.fill(s1x - 4, s1y - 4, s1x + 22, s1y, 0xFF7D2D3B);
-        graphics.fill(s1x - 4, s1y + 18, s1x + 22, s1y + 22, 0xFF7D2D3B);
-        graphics.fill(s1x - 4, s1y, s1x, s1y + 18, 0xFF7D2D3B);
-        graphics.fill(s1x + 18, s1y, s1x + 22, s1y + 18, 0xFF7D2D3B);
+        graphics.blit(OVERLAY_TEXTURE, contentLeft, contentTop, UV_OFFSET_X, UV_OFFSET_Y, OVERLAY_WIDTH, OVERLAY_HEIGHT, 256, 256);
 
-        int s2x = this.slot2Bounds.getX();
-        int s2y = this.slot2Bounds.getY();
-        drawSlot(graphics, s2x, s2y);
-        graphics.fill(s2x - 4, s2y - 4, s2x + 22, s2y, 0xFF5059AB);
-        graphics.fill(s2x - 4, s2y + 18, s2x + 22, s2y + 22, 0xFF5059AB);
-        graphics.fill(s2x - 4, s2y, s2x, s2y + 18, 0xFF5059AB);
-        graphics.fill(s2x + 18, s2y, s2x + 22, s2y + 18, 0xFF5059AB);
+        int backpackX = x + (this.imageWidth - BACKPACK_WIDTH) / 2;
+        int backpackY = y + BACKPACK_TOP_OFFSET;
+        graphics.blit(BASE_TEXTURE, backpackX, backpackY, 0, 0, BACKPACK_WIDTH, BACKPACK_HEIGHT, 256, 256);
+
+        Font font = this.minecraft.font;
+        Component titleText = Component.translatable("gui.createredstonelinkgui.frequencies_settings");
+        String titleString = titleText.getString();
+        int titleWidth = font.width(titleString);
+        int titleX = contentLeft + (OVERLAY_WIDTH - titleWidth) / 2;
+        int titleY = contentTop + TITLE_Y_OFFSET;
+        graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
     }
 
-    private static void drawSlot(GuiGraphics graphics, int x, int y) {
-        graphics.fill(x, y, x + 18, y + 18, 0xFF8B8B8B);
-        graphics.fill(x + 1, y + 1, x + 18, y + 2, 0xFF373737);
-        graphics.fill(x + 1, y + 1, x + 2, y + 18, 0xFF373737);
-        graphics.fill(x + 2, y + 2, x + 17, y + 17, 0xFFC6C6C6);
-        graphics.fill(x + 17, y + 1, x + 18, y + 18, 0xFFFFFFFF);
-        graphics.fill(x + 1, y + 17, x + 18, y + 18, 0xFFFFFFFF);
+    private static class ImageButton extends Button {
+        private static final int HOVER_COLOR = 0x221500FF;
+
+        private final ResourceLocation texture;
+        private final int u;
+        private final int v;
+        private final int texWidth;
+        private final int texHeight;
+        private final Component tooltip;
+
+        public ImageButton(int x, int y, int width, int height, ResourceLocation texture, int u, int v, Component tooltip, OnPress onPress) {
+            super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
+            this.texture = texture;
+            this.u = u;
+            this.v = v;
+            this.texWidth = 256;
+            this.texHeight = 256;
+            this.tooltip = tooltip;
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.blit(this.texture, getX(), getY(), this.u, this.v, this.width, this.height, this.texWidth, this.texHeight);
+            if (isHovered()) {
+                graphics.fill(getX(), getY(), getX() + this.width, getY() + this.height, HOVER_COLOR);
+                if (this.tooltip != null) {
+                    Font font = net.minecraft.client.Minecraft.getInstance().font;
+                    graphics.renderTooltip(font, this.tooltip, mouseX, mouseY);
+                }
+            }
+        }
     }
 }
