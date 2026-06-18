@@ -60,7 +60,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void init() {
         super.init();
 
-        int contentLeft = (this.width - OVERLAY_WIDTH) / 2;
+        int contentLeft = (this.width - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
         this.slot1Bounds = new Rect2i(
@@ -138,7 +138,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = y + CONTENT_TOP_OFFSET;
 
         graphics.blit(OVERLAY_TEXTURE, contentLeft, contentTop, UV_OFFSET_X, UV_OFFSET_Y, OVERLAY_WIDTH, OVERLAY_HEIGHT, 256, 256);
