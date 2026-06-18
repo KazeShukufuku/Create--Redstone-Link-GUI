@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.20.1-1.6.0
+
+- Add actual texture to GUI, consistent with Create mod GUIs (credit to 咖喱之恶魔)
+
 # 1.20.1-1.5.0
 
 - Port to Minecraft 1.20.1 and Forge 47.4.10
