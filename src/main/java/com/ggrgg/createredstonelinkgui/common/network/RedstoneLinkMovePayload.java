@@ -23,22 +23,30 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 
-public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Direction clickedFace) {
+public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, Vec3 hitLocation, Direction clickedFace) {
 
     public static void encode(RedstoneLinkMovePayload payload, FriendlyByteBuf buffer) {
         buffer.writeBlockPos(payload.sourcePos);
-        buffer.writeBlockPos(payload.targetPos);
+        buffer.writeBlockPos(payload.clickedPos);
+        buffer.writeDouble(payload.hitLocation.x);
+        buffer.writeDouble(payload.hitLocation.y);
+        buffer.writeDouble(payload.hitLocation.z);
         buffer.writeEnum(payload.clickedFace);
     }
 
     public static RedstoneLinkMovePayload decode(FriendlyByteBuf buffer) {
-        return new RedstoneLinkMovePayload(buffer.readBlockPos(), buffer.readBlockPos(), buffer.readEnum(Direction.class));
+        BlockPos sourcePos = buffer.readBlockPos();
+        BlockPos clickedPos = buffer.readBlockPos();
+        Vec3 hitLocation = new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
+        Direction clickedFace = buffer.readEnum(Direction.class);
+        return new RedstoneLinkMovePayload(sourcePos, clickedPos, hitLocation, clickedFace);
     }
 
     public static void handle(RedstoneLinkMovePayload payload, Supplier<NetworkEvent.Context> contextSupplier) {
@@ -49,16 +57,22 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
 
             Level level = player.level();
             BlockPos sourcePos = payload.sourcePos();
-            BlockPos targetPos = payload.targetPos();
+            BlockPos clickedPos = payload.clickedPos();
+            Vec3 hitLocation = payload.hitLocation();
             Direction clickedFace = payload.clickedFace();
 
-            if (!level.isLoaded(targetPos)) return;
+            if (!level.isLoaded(clickedPos)) return;
 
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
             if (sourceBE == null) return;
 
             LinkBehaviour sourceLink = BlockEntityBehaviour.get(sourceBE, LinkBehaviour.TYPE);
             if (sourceLink == null) return;
+
+            BlockPlaceContext placeContext = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
+                    ItemStack.EMPTY, new BlockHitResult(hitLocation, clickedFace, clickedPos, false));
+            BlockPos targetPos = clickedPos.relative(clickedFace);
+            if (!level.isLoaded(targetPos)) return;
 
             FactoryPanelSupportBehaviour gaugeSupport = BlockEntityBehaviour.get(sourceBE, FactoryPanelSupportBehaviour.TYPE);
             boolean hasGaugeConnection = gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty();
@@ -77,13 +91,14 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             BlockState targetState = level.getBlockState(targetPos);
             boolean inPlace = sourcePos.equals(targetPos);
 
-            if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) return;
+            if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced(placeContext)) return;
 
             Block block = sourceState.getBlock();
-            BlockPlaceContext placeContext = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
-                    ItemStack.EMPTY, new BlockHitResult(Vec3.atCenterOf(targetPos), clickedFace, targetPos, false));
             BlockState newState = block.getStateForPlacement(placeContext);
             if (newState == null) return;
+            newState = orientForClickedFace(newState, clickedFace);
+
+            if (!hasSupportAfterMove(level, sourcePos, targetPos, clickedFace, newState, inPlace)) return;
 
             newState = copyNonOrientationProperties(newState, sourceState);
 
@@ -125,6 +140,69 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             }
         });
         context.setPacketHandled(true);
+    }
+
+    private static boolean hasSupportAfterMove(Level level, BlockPos sourcePos, BlockPos targetPos, Direction clickedFace, BlockState targetState, boolean inPlace) {
+        Direction supportDirection = getSupportDirection(targetState);
+        if (supportDirection == null) {
+            return true;
+        }
+        if (supportDirection != clickedFace.getOpposite()) {
+            return false;
+        }
+
+        BlockPos supportPos = targetPos.relative(supportDirection);
+        if (!inPlace && supportPos.equals(sourcePos)) {
+            return false;
+        }
+        return !level.getBlockState(supportPos).canBeReplaced();
+    }
+
+    private static Direction getSupportDirection(BlockState state) {
+        if (state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            AttachFace face = state.getValue(BlockStateProperties.ATTACH_FACE);
+            return switch (face) {
+                case CEILING -> Direction.UP;
+                case FLOOR -> Direction.DOWN;
+                case WALL -> state.hasProperty(BlockStateProperties.FACING)
+                        ? state.getValue(BlockStateProperties.FACING).getOpposite()
+                        : null;
+            };
+        }
+
+        if (state.hasProperty(BlockStateProperties.FACING)) {
+            return state.getValue(BlockStateProperties.FACING).getOpposite();
+        }
+        return null;
+    }
+
+    private static BlockState orientForClickedFace(BlockState state, Direction clickedFace) {
+        Direction supportDirection = clickedFace.getOpposite();
+
+        if (state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            AttachFace face = supportDirection == Direction.DOWN
+                    ? AttachFace.FLOOR
+                    : supportDirection == Direction.UP
+                            ? AttachFace.CEILING
+                            : AttachFace.WALL;
+            state = state.setValue(BlockStateProperties.ATTACH_FACE, face);
+
+            if (face == AttachFace.WALL && state.hasProperty(BlockStateProperties.FACING)
+                    && canSet(state, BlockStateProperties.FACING, clickedFace)) {
+                state = state.setValue(BlockStateProperties.FACING, clickedFace);
+            }
+            return state;
+        }
+
+        if (state.hasProperty(BlockStateProperties.FACING)
+                && canSet(state, BlockStateProperties.FACING, clickedFace)) {
+            return state.setValue(BlockStateProperties.FACING, clickedFace);
+        }
+        return state;
+    }
+
+    private static <T extends Comparable<T>> boolean canSet(BlockState state, Property<T> property, T value) {
+        return state.hasProperty(property) && property.getPossibleValues().contains(value);
     }
 
     private static BlockState copyNonOrientationProperties(BlockState target, BlockState source) {
