@@ -5,10 +5,8 @@ import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
-import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -159,23 +157,10 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         int titleY = contentTop + TITLE_Y_OFFSET;
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
 
-        ItemStack blockStack = ItemStack.EMPTY;
         if (this.minecraft.level != null) {
             var blockState = this.minecraft.level.getBlockState(this.menu.getPos());
-            var blockItem = blockState.getBlock().asItem();
-            if (blockItem != null) {
-                blockStack = new ItemStack(blockItem);
-            }
-        }
-        if (!blockStack.isEmpty()) {
-            PoseStack pose = graphics.pose();
-            pose.pushPose();
-            pose.translate(0, 0, 10);
-            GuiGameElement.of(blockStack)
-                    .scale(4)
-                    .at(0, 0, -200)
-                    .render(graphics, x + 215, contentTop + 30);
-            pose.popPose();
+            var blockEntity = this.minecraft.level.getBlockEntity(this.menu.getPos());
+            BlockPreviewRenderer.render(graphics, blockState, blockEntity, x + 215, contentTop + 30);
         }
     }
 

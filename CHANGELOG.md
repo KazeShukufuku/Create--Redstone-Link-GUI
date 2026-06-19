@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.20.1-1.7.2
+
+- Render Create: Connected linked lever/button previews
+
 # 1.20.1-1.7.1
 
 - Improve Void Motor relocation orientation
