@@ -1,5 +1,19 @@
 ## Changelog
 
+# 1.20.1-1.7.2
+
+- Render Create: Connected linked lever/button previews
+
+# 1.20.1-1.7.1
+
+- Improve Void Motor relocation orientation
+
+# 1.20.1-1.7.0
+
+- Add 3D preview rendering for configured link blocks
+- Add Void Link frequency GUI support for Create Utilities J 1.20.1-0.3.3
+- Add Void Link owner claim/unclaim support
+
 # 1.20.1-1.6.0
 
 - Add actual texture to GUI, consistent with Create mod GUIs (made by 咖喱之恶魔)

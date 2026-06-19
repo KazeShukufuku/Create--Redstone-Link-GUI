@@ -2,7 +2,9 @@ package com.ggrgg.createredstonelinkgui;
 
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+import com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
@@ -36,7 +38,10 @@ public class CreateRedstoneLinkGUIClient {
     public static class ModBusEvents {
         @SubscribeEvent
         static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(() -> MenuScreens.register(RedstoneLinkMenu.TYPE.get(), RedstoneLinkConfigScreen::new));
+            event.enqueueWork(() -> {
+                MenuScreens.register(RedstoneLinkMenu.TYPE.get(), RedstoneLinkConfigScreen::new);
+                MenuScreens.register(VoidLinkMenu.TYPE.get(), VoidLinkConfigScreen::new);
+            });
         }
     }
 }
