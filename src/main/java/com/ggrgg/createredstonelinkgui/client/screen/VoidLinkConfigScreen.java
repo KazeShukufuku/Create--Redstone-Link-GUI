@@ -1,12 +1,15 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
+import java.util.Objects;
+import java.util.UUID;
+
 import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
-import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
-import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
+import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
+import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
 import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.Font;
@@ -14,12 +17,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLinkMenu> {
+public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> {
 
     private static final ResourceLocation BASE_TEXTURE = new ResourceLocation("create", "textures/gui/player_inventory.png");
     private static final ResourceLocation OVERLAY_TEXTURE = new ResourceLocation("createredstonelinkgui", "textures/redstone_link.png");
@@ -34,9 +40,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     private static final int UV_OFFSET_X = 16;
     private static final int UV_OFFSET_Y = 160;
 
-    private static final int SLOT1_UV_X = 77;
     private static final int SLOT1_UV_Y = 188;
-    private static final int SLOT2_UV_X = 113;
     private static final int SLOT2_UV_Y = 188;
     private static final int SLOT_SIZE = 16;
 
@@ -47,12 +51,13 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     private static final int ICON_SIZE = 18;
 
     private static final int TITLE_Y_OFFSET = 4;
+    private static final int HOVER_COLOR = 0x221500FF;
 
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
     public Rect2i blockPreviewBounds;
 
-    public RedstoneLinkConfigScreen(RedstoneLinkMenu menu, Inventory playerInv, Component title) {
+    public VoidLinkConfigScreen(VoidLinkMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = 256;
         this.imageHeight = CONTENT_TOP_OFFSET + OVERLAY_HEIGHT + BACKPACK_HEIGHT + 6;
@@ -67,68 +72,48 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         int contentLeft = leftPos + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
-        this.slot1Bounds = new Rect2i(
-                leftPos + 101,
-                contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
-                SLOT_SIZE,
-                SLOT_SIZE
-        );
-        this.slot2Bounds = new Rect2i(
-                leftPos + 137,
-                contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
-                SLOT_SIZE,
-                SLOT_SIZE
-        );
+        this.slot1Bounds = new Rect2i(leftPos + 101, contentTop + (SLOT1_UV_Y - UV_OFFSET_Y), SLOT_SIZE, SLOT_SIZE);
+        this.slot2Bounds = new Rect2i(leftPos + 137, contentTop + (SLOT2_UV_Y - UV_OFFSET_Y), SLOT_SIZE, SLOT_SIZE);
         this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
 
-        if (this.menu.isRedstoneLink()) {
-            this.addRenderableWidget(new RedstoneLinkToggleWidget(
-                    contentLeft + 65, contentTop + 64,
-                    this.menu.getPos(),
-                    () -> {
-                        var level = this.minecraft.level;
-                        if (level != null) {
-                            var state = level.getBlockState(this.menu.getPos());
-                            if (state.getBlock() instanceof RedstoneLinkBlock) {
-                                return state.getValue(RedstoneLinkBlock.RECEIVER);
-                            }
-                        }
-                        return false;
-                    }
-            ));
-        }
+        this.addRenderableWidget(new SkullButton(contentLeft + 81, contentTop + 63, btn -> {
+            Object behaviour = this.menu.getBehaviour();
+            if (behaviour == null || this.minecraft.player == null) return;
 
-        ImageButton moveButton = new ImageButton(
+            var owner = VoidLinkHelper.getOwner(behaviour);
+            if (owner == null || this.minecraft.player.getUUID().equals(owner.getId())) {
+                CreateRedstoneLinkGUI.NETWORK.sendToServer(new VoidLinkClaimPayload(this.menu.getPos()));
+            }
+        }));
+
+        this.addRenderableWidget(new ImageButton(
                 contentLeft + 10, contentTop + 63,
                 ICON_SIZE, ICON_SIZE,
                 OVERLAY_TEXTURE,
                 MOVE_UV_X, MOVE_UV_Y,
                 Component.translatable("gui.createredstonelinkgui.relocate"),
-                (btn) -> {
+                btn -> {
                     RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
                     this.minecraft.setScreen(null);
                 }
-        );
-        this.addRenderableWidget(moveButton);
+        ));
 
-        ImageButton backButton = new ImageButton(
+        this.addRenderableWidget(new ImageButton(
                 contentLeft + 149, contentTop + 63,
                 ICON_SIZE, ICON_SIZE,
                 OVERLAY_TEXTURE,
                 BACK_UV_X, BACK_UV_Y,
                 Component.translatable("gui.createredstonelinkgui.close"),
-                (btn) -> this.minecraft.setScreen(null)
-        );
-        this.addRenderableWidget(backButton);
+                btn -> this.minecraft.setScreen(null)
+        ));
     }
 
     public void updateFrequencySlot(int slotIndex, ItemStack stack) {
-        RedstoneLinkMenu customMenu = this.menu;
-        var behaviour = customMenu.getBehaviour();
+        Object behaviour = this.menu.getBehaviour();
         if (behaviour != null) {
-            RedstoneLinkMenu.applyFrequencyChangeDirect(behaviour, slotIndex == 0, stack);
+            VoidLinkMenu.applyFrequencyChangeDirect(behaviour, slotIndex == 0, stack);
         }
-        CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkFrequencyPayload(customMenu.getPos(), stack, slotIndex));
+        CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkFrequencyPayload(this.menu.getPos(), stack, slotIndex));
     }
 
     @Override
@@ -183,9 +168,41 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
     }
 
-    private static class ImageButton extends Button {
-        private static final int HOVER_COLOR = 0x221500FF;
+    private class SkullButton extends Button {
+        private ItemStack cachedStack = new ItemStack(Items.SKELETON_SKULL);
+        private UUID lastOwnerId;
 
+        SkullButton(int x, int y, OnPress onPress) {
+            super(x, y, ICON_SIZE, ICON_SIZE, Component.empty(), onPress, DEFAULT_NARRATION);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            Object behaviour = menu.getBehaviour();
+            if (behaviour != null) {
+                var owner = VoidLinkHelper.getOwner(behaviour);
+                UUID ownerId = owner == null ? null : owner.getId();
+                if (!Objects.equals(ownerId, lastOwnerId)) {
+                    lastOwnerId = ownerId;
+                    cachedStack = owner == null ? new ItemStack(Items.SKELETON_SKULL) : ownerHead(owner);
+                }
+            }
+            graphics.renderItem(cachedStack, getX(), getY());
+            if (isHovered()) {
+                graphics.fill(getX(), getY(), getX() + width, getY() + height, HOVER_COLOR);
+            }
+        }
+
+        private ItemStack ownerHead(com.mojang.authlib.GameProfile owner) {
+            ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
+            CompoundTag tag = new CompoundTag();
+            tag.put("SkullOwner", NbtUtils.writeGameProfile(new CompoundTag(), owner));
+            stack.setTag(tag);
+            return stack;
+        }
+    }
+
+    private static class ImageButton extends Button {
         private final ResourceLocation texture;
         private final int u;
         private final int v;
@@ -193,7 +210,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         private final int texHeight;
         private final Component tooltip;
 
-        public ImageButton(int x, int y, int width, int height, ResourceLocation texture, int u, int v, Component tooltip, OnPress onPress) {
+        ImageButton(int x, int y, int width, int height, ResourceLocation texture, int u, int v, Component tooltip, OnPress onPress) {
             super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
             this.texture = texture;
             this.u = u;

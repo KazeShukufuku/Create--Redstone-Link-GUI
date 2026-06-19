@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.common.network;
 import java.util.function.Supplier;
 
 import com.ggrgg.createredstonelinkgui.Config;
+import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelConnection;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
@@ -67,7 +68,7 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
             if (sourceBE == null) return;
 
             LinkBehaviour sourceLink = BlockEntityBehaviour.get(sourceBE, LinkBehaviour.TYPE);
-            if (sourceLink == null) return;
+            if (sourceLink == null && VoidLinkHelper.getBehaviour(level, sourcePos) == null) return;
 
             BlockPlaceContext placeContext = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
                     ItemStack.EMPTY, new BlockHitResult(hitLocation, clickedFace, clickedPos, false));

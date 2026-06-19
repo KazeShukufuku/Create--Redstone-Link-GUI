@@ -2,7 +2,9 @@ package com.ggrgg.createredstonelinkgui.common.network;
 
 import java.util.function.Supplier;
 
+import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -44,6 +46,15 @@ public record RedstoneLinkFrequencyPayload(BlockPos pos, ItemStack selectedItem,
 
                     be.setChanged();
                     level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
+                } else {
+                    Object voidLinkBehaviour = VoidLinkHelper.getBehaviour(level, pos);
+                    if (voidLinkBehaviour != null) {
+                        if (!VoidLinkHelper.canInteract(voidLinkBehaviour, player)) return;
+                        VoidLinkMenu.applyFrequencyChangeDirect(voidLinkBehaviour, payload.slotIndex() == 0, payload.selectedItem());
+
+                        be.setChanged();
+                        level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
+                    }
                 }
             }
         });

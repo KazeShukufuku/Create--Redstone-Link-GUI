@@ -46,3 +46,10 @@ Enables changing redstone link frequencies via JEI/EMI.
     versionRange="${emi_version_range}"
     ordering="NONE"
     side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="createutilities"
+    mandatory=false
+    versionRange="${create_utilities_j_version_range}"
+    ordering="AFTER"
+    side="BOTH"

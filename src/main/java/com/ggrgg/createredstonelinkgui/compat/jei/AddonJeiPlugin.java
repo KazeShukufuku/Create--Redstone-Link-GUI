@@ -1,10 +1,20 @@
 package com.ggrgg.createredstonelinkgui.compat.jei;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+import com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
+import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 @JeiPlugin
 public class AddonJeiPlugin implements IModPlugin {
@@ -18,5 +28,40 @@ public class AddonJeiPlugin implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGhostIngredientHandler(RedstoneLinkConfigScreen.class, new RedstoneLinkGhostHandler());
+        registration.addGhostIngredientHandler(VoidLinkConfigScreen.class, new VoidLinkGhostHandler());
+        registration.addGenericGuiContainerHandler(RedstoneLinkConfigScreen.class, new IGuiContainerHandler<RedstoneLinkConfigScreen>() {
+            @Override
+            public List<Rect2i> getGuiExtraAreas(RedstoneLinkConfigScreen screen) {
+                return screen.blockPreviewBounds != null ? List.of(screen.blockPreviewBounds) : List.of();
+            }
+        });
+        registration.addGenericGuiContainerHandler(VoidLinkConfigScreen.class, new IGuiContainerHandler<VoidLinkConfigScreen>() {
+            @Override
+            public List<Rect2i> getGuiExtraAreas(VoidLinkConfigScreen screen) {
+                return screen.blockPreviewBounds != null ? List.of(screen.blockPreviewBounds) : List.of();
+            }
+        });
+    }
+
+    private static class VoidLinkGhostHandler implements IGhostIngredientHandler<VoidLinkConfigScreen> {
+        @Override
+        public <I> List<Target<I>> getTargetsTyped(VoidLinkConfigScreen screen, ITypedIngredient<I> typedIngredient, boolean doStart) {
+            var itemStackOptional = typedIngredient.getIngredient(VanillaTypes.ITEM_STACK);
+            if (itemStackOptional.isEmpty()) return List.of();
+
+            ItemStack stack = itemStackOptional.get();
+            List<Target<I>> targets = new ArrayList<>(2);
+            targets.add(new Target<>() {
+                @Override public Rect2i getArea() { return screen.slot1Bounds; }
+                @Override public void accept(I ing) { screen.updateFrequencySlot(0, stack); }
+            });
+            targets.add(new Target<>() {
+                @Override public Rect2i getArea() { return screen.slot2Bounds; }
+                @Override public void accept(I ing) { screen.updateFrequencySlot(1, stack); }
+            });
+            return targets;
+        }
+
+        @Override public void onComplete() {}
     }
 }

@@ -3,9 +3,11 @@ package com.ggrgg.createredstonelinkgui;
 import org.slf4j.Logger;
 
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
+import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
@@ -35,6 +37,7 @@ public class CreateRedstoneLinkGUI {
 
         registerPackets();
         RedstoneLinkMenu.MENUS.register(modEventBus);
+        VoidLinkMenu.MENUS.register(modEventBus);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
@@ -53,5 +56,9 @@ public class CreateRedstoneLinkGUI {
                 RedstoneLinkMovePayload::encode,
                 RedstoneLinkMovePayload::decode,
                 RedstoneLinkMovePayload::handle);
+        NETWORK.registerMessage(id++, VoidLinkClaimPayload.class,
+                VoidLinkClaimPayload::encode,
+                VoidLinkClaimPayload::decode,
+                VoidLinkClaimPayload::handle);
     }
 }
