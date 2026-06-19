@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.20.1-1.7.1
+
+- Improve Void Motor relocation orientation
+
 # 1.20.1-1.7.0
 
 - Add 3D preview rendering for configured link blocks

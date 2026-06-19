@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.ggrgg.createredstonelinkgui.Config;
 import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
+import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelConnection;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
@@ -68,7 +69,8 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
             if (sourceBE == null) return;
 
             LinkBehaviour sourceLink = BlockEntityBehaviour.get(sourceBE, LinkBehaviour.TYPE);
-            if (sourceLink == null && VoidLinkHelper.getBehaviour(level, sourcePos) == null) return;
+            Object sourceVoidLink = VoidLinkHelper.getBehaviour(level, sourcePos);
+            if (sourceLink == null && sourceVoidLink == null) return;
 
             BlockPlaceContext placeContext = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
                     ItemStack.EMPTY, new BlockHitResult(hitLocation, clickedFace, clickedPos, false));
@@ -102,6 +104,7 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
             if (!hasSupportAfterMove(level, sourcePos, targetPos, clickedFace, newState, inPlace)) return;
 
             newState = copyNonOrientationProperties(newState, sourceState);
+            newState = specializeVoidMotorOrientation(level, sourceState, newState, sourcePos, targetPos, player, inPlace);
 
             if (hasGaugeConnection) {
                 Direction oldFace = sourceState.getValue(BlockStateProperties.FACING);
@@ -175,6 +178,53 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
             return state.getValue(BlockStateProperties.FACING).getOpposite();
         }
         return null;
+    }
+
+    private static BlockState specializeVoidMotorOrientation(Level level, BlockState sourceState, BlockState targetState,
+            BlockPos sourcePos, BlockPos targetPos, ServerPlayer player, boolean inPlace) {
+        if (!isVoidMotor(sourceState) || !targetState.hasProperty(BlockStateProperties.FACING)) {
+            return targetState;
+        }
+
+        Direction connectedFace = findConnectableKineticFace(level, targetPos, sourcePos, inPlace, targetState);
+        if (connectedFace != null) {
+            return targetState.setValue(BlockStateProperties.FACING, connectedFace);
+        }
+
+        Direction frequencyFace = faceTowardPlayer(targetPos, player);
+        Direction shaftFace = frequencyFace.getOpposite();
+        if (canSet(targetState, BlockStateProperties.FACING, shaftFace)) {
+            return targetState.setValue(BlockStateProperties.FACING, shaftFace);
+        }
+        return targetState;
+    }
+
+    private static boolean isVoidMotor(BlockState state) {
+        return state.getBlock().getClass().getName()
+                .equals("io.github.jasonsimpart.createutilitiesj.blocks.voidtypes.motor.VoidMotorBlock");
+    }
+
+    private static Direction findConnectableKineticFace(Level level, BlockPos targetPos, BlockPos sourcePos,
+            boolean inPlace, BlockState targetState) {
+        for (Direction direction : Direction.values()) {
+            if (!canSet(targetState, BlockStateProperties.FACING, direction)) continue;
+
+            BlockPos neighbourPos = targetPos.relative(direction);
+            if (!inPlace && neighbourPos.equals(sourcePos)) continue;
+            if (!level.isLoaded(neighbourPos)) continue;
+
+            BlockState neighbourState = level.getBlockState(neighbourPos);
+            if (neighbourState.getBlock() instanceof IRotate rotate
+                    && rotate.hasShaftTowards(level, neighbourPos, neighbourState, direction.getOpposite())) {
+                return direction;
+            }
+        }
+        return null;
+    }
+
+    private static Direction faceTowardPlayer(BlockPos targetPos, ServerPlayer player) {
+        Vec3 fromTarget = player.getEyePosition().subtract(Vec3.atCenterOf(targetPos));
+        return Direction.getNearest(fromTarget.x, fromTarget.y, fromTarget.z);
     }
 
     private static BlockState orientForClickedFace(BlockState state, Direction clickedFace) {
