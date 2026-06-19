@@ -25,7 +25,7 @@ CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gu
 
 GitHub: https://github.com/KazeShukufuku/Create--Redstone-Link-GUI
 
-CurseForge:
+CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui-unofficial-port
 
 ---
 
@@ -51,7 +51,7 @@ CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gu
 
 GitHub: https://github.com/KazeShukufuku/Create--Redstone-Link-GUI
 
-CurseForge:
+CurseForge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui-unofficial-port
 
 ---
 
