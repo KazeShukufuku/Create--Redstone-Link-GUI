@@ -18,11 +18,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class RedstoneLinkMoveHandler {
 
@@ -33,6 +36,8 @@ public class RedstoneLinkMoveHandler {
     private static BlockState sourceState;
     private static boolean active;
     private static BlockPos validTarget;
+    private static BlockPos validClickedPos;
+    private static Vec3 validHitLocation;
     private static Direction validFace;
     private static int moveRange;
     private static String invalidReason;
@@ -47,6 +52,8 @@ public class RedstoneLinkMoveHandler {
         sourceState = state;
         active = true;
         validTarget = null;
+        validClickedPos = null;
+        validHitLocation = null;
         validFace = null;
         invalidReason = null;
         moveRange = Config.MOVE_RANGE.get();
@@ -62,11 +69,8 @@ public class RedstoneLinkMoveHandler {
         }
 
         // Show face highlight on source block
-        Direction sourceFace = sourceState.hasProperty(BlockStateProperties.FACING)
-                ? sourceState.getValue(BlockStateProperties.FACING).getOpposite()
-                : Direction.UP;
         Outliner.getInstance()
-                .showAABB(sourcePos, getFaceHighlight(sourcePos, sourceFace))
+                .showAABB(sourcePos, getBlockHighlight(mc.level, sourcePos, sourceState))
                 .colored(AnimationTickHolder.getTicks() % 16 > 8 ? 0x38b764 : 0xa7f070)
                 .lineWidth(1 / 16f);
 
@@ -76,34 +80,46 @@ public class RedstoneLinkMoveHandler {
 
         // Evaluate potential target
         validTarget = null;
+        validClickedPos = null;
+        validHitLocation = null;
         validFace = null;
         invalidReason = null;
 
-        if (!(mc.hitResult instanceof BlockHitResult bhr) || bhr.getType() == Type.MISS)
+        BlockHitResult worldHit = mc.hitResult instanceof BlockHitResult hit && hit.getType() != Type.MISS
+                ? hit
+                : null;
+        BlockHitResult bhr = getPlacementHit(mc, worldHit);
+        if (bhr == null)
             return;
 
         Direction clickedFace = bhr.getDirection();
         Direction attachFace = clickedFace.getOpposite();
+        BlockPos clickedPos = bhr.getBlockPos();
+        Vec3 hitLocation = bhr.getLocation();
+        BlockPos pos = clickedPos.relative(clickedFace);
 
-        Vec3 offsetPos = bhr.getLocation()
-                .add(Vec3.atLowerCornerOf(clickedFace.getNormal())
-                        .scale(1 / 32f));
-        BlockPos pos = BlockPos.containing(offsetPos);
+        BlockPlaceContext placeContext = new BlockPlaceContext(mc.level, mc.player, InteractionHand.MAIN_HAND,
+                ItemStack.EMPTY, bhr);
         BlockState targetState = mc.level.getBlockState(pos);
         boolean inPlace = pos.equals(sourcePos);
 
         // Check: obstructed
-        if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) {
+        if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced(placeContext)) {
             invalidReason = "move_fail_obstructed";
             showRedOutline(pos, attachFace);
             return;
         }
 
         // Check: placement logic
-        BlockPlaceContext placeContext = new BlockPlaceContext(mc.level, mc.player, InteractionHand.MAIN_HAND,
-                ItemStack.EMPTY, new BlockHitResult(Vec3.atCenterOf(pos), clickedFace, pos, false));
         BlockState newState = sourceState.getBlock().getStateForPlacement(placeContext);
         if (newState == null) {
+            invalidReason = "move_fail_no_surface";
+            showRedOutline(pos, attachFace);
+            return;
+        }
+        newState = orientForClickedFace(newState, clickedFace);
+
+        if (!hasSupportAfterMove(mc.level, sourcePos, pos, clickedFace, newState, inPlace)) {
             invalidReason = "move_fail_no_surface";
             showRedOutline(pos, attachFace);
             return;
@@ -161,6 +177,8 @@ public class RedstoneLinkMoveHandler {
 
         // All checks passed
         validTarget = pos;
+        validClickedPos = bhr.getBlockPos();
+        validHitLocation = hitLocation;
         validFace = clickedFace;
 
         Outliner.getInstance()
@@ -175,6 +193,190 @@ public class RedstoneLinkMoveHandler {
                 .showAABB("target", getFaceHighlight(pos, face))
                 .colored(0xff4444)
                 .lineWidth(1 / 16f);
+    }
+
+    private static BlockHitResult getPlacementHit(Minecraft mc, BlockHitResult worldHit) {
+        if (worldHit != null && placesAtSource(worldHit)) {
+            return worldHit;
+        }
+
+        BlockHitResult sourceHit = getSourceCubeHit(mc);
+        if (sourceHit == null) {
+            return worldHit;
+        }
+        if (worldHit == null) {
+            return sourceHit;
+        }
+
+        Vec3 eye = mc.player.getEyePosition(1.0F);
+        double sourceDistance = eye.distanceToSqr(sourceHit.getLocation());
+        double worldDistance = eye.distanceToSqr(worldHit.getLocation());
+        return sourceDistance <= worldDistance + 1.0E-7 ? sourceHit : worldHit;
+    }
+
+    private static boolean placesAtSource(BlockHitResult hit) {
+        return hit.getBlockPos().relative(hit.getDirection()).equals(sourcePos);
+    }
+
+    private static BlockHitResult getSourceCubeHit(Minecraft mc) {
+        Vec3 eye = mc.player.getEyePosition(1.0F);
+        Vec3 look = mc.player.getViewVector(1.0F);
+        Vec3 end = eye.add(look.scale(Math.max(moveRange + 1.0, 6.0)));
+        RayBoxHit hit = clipUnitCube(new AABB(sourcePos), eye, end);
+        if (hit == null) {
+            return null;
+        }
+
+        Direction sourceFace = hit.face();
+        BlockPos supportPos = sourcePos.relative(sourceFace);
+        Direction clickedFace = sourceFace.getOpposite();
+        return new BlockHitResult(hit.location(), clickedFace, supportPos, false);
+    }
+
+    private static RayBoxHit clipUnitCube(AABB box, Vec3 start, Vec3 end) {
+        Vec3 delta = end.subtract(start);
+        double tEnter = 0.0;
+        double tExit = 1.0;
+        Direction enterFace = null;
+        Direction exitFace = null;
+
+        SlabResult x = clipSlab(start.x, delta.x, box.minX, box.maxX, Direction.WEST, Direction.EAST);
+        if (x == null) return null;
+        if (x.enterT() > tEnter) {
+            tEnter = x.enterT();
+            enterFace = x.enterFace();
+        }
+        if (x.exitT() < tExit) {
+            tExit = x.exitT();
+            exitFace = x.exitFace();
+        }
+
+        SlabResult y = clipSlab(start.y, delta.y, box.minY, box.maxY, Direction.DOWN, Direction.UP);
+        if (y == null) return null;
+        if (y.enterT() > tEnter) {
+            tEnter = y.enterT();
+            enterFace = y.enterFace();
+        }
+        if (y.exitT() < tExit) {
+            tExit = y.exitT();
+            exitFace = y.exitFace();
+        }
+
+        SlabResult z = clipSlab(start.z, delta.z, box.minZ, box.maxZ, Direction.NORTH, Direction.SOUTH);
+        if (z == null) return null;
+        if (z.enterT() > tEnter) {
+            tEnter = z.enterT();
+            enterFace = z.enterFace();
+        }
+        if (z.exitT() < tExit) {
+            tExit = z.exitT();
+            exitFace = z.exitFace();
+        }
+
+        if (tEnter > tExit || tExit < 0.0 || tEnter > 1.0) {
+            return null;
+        }
+
+        Direction face = enterFace != null ? enterFace : exitFace;
+        if (face == null) {
+            return null;
+        }
+
+        double t = enterFace != null ? Math.max(tEnter, 0.0) : tExit;
+        return new RayBoxHit(start.add(delta.scale(t)), face);
+    }
+
+    private static SlabResult clipSlab(double start, double delta, double min, double max, Direction minFace, Direction maxFace) {
+        if (Math.abs(delta) < 1.0E-7) {
+            return start >= min && start <= max
+                    ? new SlabResult(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, null, null)
+                    : null;
+        }
+
+        double t1 = (min - start) / delta;
+        double t2 = (max - start) / delta;
+        Direction face1 = minFace;
+        Direction face2 = maxFace;
+        if (t1 > t2) {
+            double t = t1;
+            t1 = t2;
+            t2 = t;
+            Direction face = face1;
+            face1 = face2;
+            face2 = face;
+        }
+        return new SlabResult(t1, t2, face1, face2);
+    }
+
+    private static AABB getBlockHighlight(Level level, BlockPos pos, BlockState state) {
+        VoxelShape shape = state.getShape(level, pos);
+        if (shape.isEmpty()) {
+            return new AABB(pos);
+        }
+        return shape.bounds().move(pos);
+    }
+
+    private static boolean hasSupportAfterMove(Level level, BlockPos sourcePos, BlockPos targetPos, Direction clickedFace, BlockState targetState, boolean inPlace) {
+        Direction supportDirection = getSupportDirection(targetState);
+        if (supportDirection == null) {
+            return true;
+        }
+        if (supportDirection != clickedFace.getOpposite()) {
+            return false;
+        }
+
+        BlockPos supportPos = targetPos.relative(supportDirection);
+        if (!inPlace && supportPos.equals(sourcePos)) {
+            return false;
+        }
+        return !level.getBlockState(supportPos).canBeReplaced();
+    }
+
+    private static Direction getSupportDirection(BlockState state) {
+        if (state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            AttachFace face = state.getValue(BlockStateProperties.ATTACH_FACE);
+            return switch (face) {
+                case CEILING -> Direction.UP;
+                case FLOOR -> Direction.DOWN;
+                case WALL -> state.hasProperty(BlockStateProperties.FACING)
+                        ? state.getValue(BlockStateProperties.FACING).getOpposite()
+                        : null;
+            };
+        }
+
+        if (state.hasProperty(BlockStateProperties.FACING)) {
+            return state.getValue(BlockStateProperties.FACING).getOpposite();
+        }
+        return null;
+    }
+
+    private static BlockState orientForClickedFace(BlockState state, Direction clickedFace) {
+        Direction supportDirection = clickedFace.getOpposite();
+
+        if (state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            AttachFace face = supportDirection == Direction.DOWN
+                    ? AttachFace.FLOOR
+                    : supportDirection == Direction.UP
+                            ? AttachFace.CEILING
+                            : AttachFace.WALL;
+            state = state.setValue(BlockStateProperties.ATTACH_FACE, face);
+
+            if (face == AttachFace.WALL && state.hasProperty(BlockStateProperties.FACING)
+                    && canSet(state, BlockStateProperties.FACING, clickedFace)) {
+                state = state.setValue(BlockStateProperties.FACING, clickedFace);
+            }
+            return state;
+        }
+
+        if (state.hasProperty(BlockStateProperties.FACING)
+                && canSet(state, BlockStateProperties.FACING, clickedFace)) {
+            return state.setValue(BlockStateProperties.FACING, clickedFace);
+        }
+        return state;
+    }
+
+    private static <T extends Comparable<T>> boolean canSet(BlockState state, Property<T> property, T value) {
+        return state.hasProperty(property) && property.getPossibleValues().contains(value);
     }
 
     private static AABB getFaceHighlight(BlockPos pos, Direction face) {
@@ -208,8 +410,8 @@ public class RedstoneLinkMoveHandler {
             invalidReason = null;
         }
 
-        if (validTarget != null && validFace != null) {
-            CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkMovePayload(sourcePos, validTarget, validFace));
+        if (validTarget != null && validClickedPos != null && validHitLocation != null && validFace != null) {
+            CreateRedstoneLinkGUI.NETWORK.sendToServer(new RedstoneLinkMovePayload(sourcePos, validClickedPos, validHitLocation, validFace));
             mc.player.displayClientMessage(
                     Component.translatable("gui.createredstonelinkgui.link_relocated"), true);
         } else if (invalidReason != null) {
@@ -229,6 +431,8 @@ public class RedstoneLinkMoveHandler {
         sourcePos = null;
         sourceState = null;
         validTarget = null;
+        validClickedPos = null;
+        validHitLocation = null;
         validFace = null;
         invalidReason = null;
         moveRange = 0;
@@ -237,4 +441,8 @@ public class RedstoneLinkMoveHandler {
     public static boolean isActive() {
         return active;
     }
+
+    private record RayBoxHit(Vec3 location, Direction face) {}
+
+    private record SlabResult(double enterT, double exitT, Direction enterFace, Direction exitFace) {}
 }
