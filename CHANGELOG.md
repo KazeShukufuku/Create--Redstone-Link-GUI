@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.20.1-1.8.2
+
+- Hook Forge config translation keys for Configured
+
 # 1.20.1-1.8.1
 
 - Fix menu opening flow by moving link-click detection to the client and opening menus through a server packet
