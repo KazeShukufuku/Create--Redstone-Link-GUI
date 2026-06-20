@@ -7,10 +7,7 @@
   "createredstonelinkgui.configuration.moveRange": "Maximum Move Range",
   "createredstonelinkgui.configuration.moveRange.tooltip": "Maximum distance in blocks a redstone link can be moved",
   "createredstonelinkgui.configuration.clickMode": "Menu Trigger Mode",
-  "createredstonelinkgui.configuration.clickMode.tooltip": "How to open the redstone link frequency menu (Client-side)",
-  "createredstonelinkgui.configuration.clickMode.SLOT": "Slot - Right-click frequency slot",
-  "createredstonelinkgui.configuration.clickMode.SHIFT_SLOT": "Shift+Slot - Shift + right-click frequency slot",
-  "createredstonelinkgui.configuration.clickMode.SHIFT_BLOCK": "Shift+Block - Shift + right-click anywhere",
+  "createredstonelinkgui.configuration.clickMode.tooltip": "How to open the redstone link frequency menu (Client-side)\nSLOT - Right-click frequency slot\nSHIFT_SLOT - Shift + right-click frequency slot\nSHIFT_BLOCK - Shift + right-click anywhere",
 
   "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
   "container.createredstonelinkgui.void_link_menu": "Void Link Frequencies",
