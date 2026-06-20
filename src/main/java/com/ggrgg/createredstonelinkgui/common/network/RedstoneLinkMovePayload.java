@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -27,6 +28,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -104,7 +106,7 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
             if (!hasSupportAfterMove(level, sourcePos, targetPos, clickedFace, newState, inPlace)) return;
 
             newState = copyNonOrientationProperties(newState, sourceState);
-            newState = specializeVoidMotorOrientation(level, sourceState, newState, sourcePos, targetPos, player, inPlace);
+            newState = specializeVoidBlockOrientation(level, sourceState, newState, sourcePos, targetPos, player, inPlace);
 
             if (hasGaugeConnection) {
                 Direction oldFace = sourceState.getValue(BlockStateProperties.FACING);
@@ -180,9 +182,34 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
         return null;
     }
 
-    private static BlockState specializeVoidMotorOrientation(Level level, BlockState sourceState, BlockState targetState,
+    private static BlockState specializeVoidBlockOrientation(Level level, BlockState sourceState, BlockState targetState,
             BlockPos sourcePos, BlockPos targetPos, ServerPlayer player, boolean inPlace) {
-        if (!isVoidMotor(sourceState) || !targetState.hasProperty(BlockStateProperties.FACING)) {
+        if (!isCreateUtilitiesVoidBlock(sourceState)) {
+            return targetState;
+        }
+
+        if (isVoidMotor(sourceState)) {
+            return specializeVoidMotorOrientation(level, targetState, sourcePos, targetPos, player, inPlace);
+        }
+
+        DirectionProperty facingProperty = getFacingProperty(targetState);
+        if (facingProperty == null) {
+            return targetState;
+        }
+
+        Direction frequencyFace = faceTowardPlayer(targetPos, player);
+        if (!canSet(targetState, facingProperty, frequencyFace)) {
+            frequencyFace = horizontalFaceTowardPlayer(targetPos, player);
+        }
+        if (canSet(targetState, facingProperty, frequencyFace)) {
+            return targetState.setValue(facingProperty, frequencyFace);
+        }
+        return targetState;
+    }
+
+    private static BlockState specializeVoidMotorOrientation(Level level, BlockState targetState,
+            BlockPos sourcePos, BlockPos targetPos, ServerPlayer player, boolean inPlace) {
+        if (!targetState.hasProperty(BlockStateProperties.FACING)) {
             return targetState;
         }
 
@@ -200,8 +227,27 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
     }
 
     private static boolean isVoidMotor(BlockState state) {
-        return state.getBlock().getClass().getName()
-                .equals("io.github.jasonsimpart.createutilitiesj.blocks.voidtypes.motor.VoidMotorBlock");
+        String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+        return blockId.equals("createutilities:void_motor")
+                || state.getBlock().getClass().getName()
+                        .equals("io.github.jasonsimpart.createutilitiesj.blocks.voidtypes.motor.VoidMotorBlock");
+    }
+
+    private static boolean isCreateUtilitiesVoidBlock(BlockState state) {
+        String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+        return blockId.equals("createutilities:void_motor")
+                || blockId.equals("createutilities:void_chest")
+                || blockId.equals("createutilities:void_battery")
+                || isVoidMotor(state);
+    }
+
+    private static DirectionProperty getFacingProperty(BlockState state) {
+        for (Property<?> property : state.getProperties()) {
+            if (property.getName().equals("facing") && property instanceof DirectionProperty directionProperty) {
+                return directionProperty;
+            }
+        }
+        return null;
     }
 
     private static Direction findConnectableKineticFace(Level level, BlockPos targetPos, BlockPos sourcePos,
@@ -225,6 +271,11 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos clickedPos, V
     private static Direction faceTowardPlayer(BlockPos targetPos, ServerPlayer player) {
         Vec3 fromTarget = player.getEyePosition().subtract(Vec3.atCenterOf(targetPos));
         return Direction.getNearest(fromTarget.x, fromTarget.y, fromTarget.z);
+    }
+
+    private static Direction horizontalFaceTowardPlayer(BlockPos targetPos, ServerPlayer player) {
+        Vec3 fromTarget = player.position().subtract(Vec3.atCenterOf(targetPos));
+        return Direction.getNearest(fromTarget.x, 0, fromTarget.z);
     }
 
     private static BlockState orientForClickedFace(BlockState state, Direction clickedFace) {

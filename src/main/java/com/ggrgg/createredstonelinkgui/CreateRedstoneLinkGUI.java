@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
@@ -40,6 +41,7 @@ public class CreateRedstoneLinkGUI {
         VoidLinkMenu.MENUS.register(modEventBus);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
     }
 
     private static void registerPackets() {
@@ -60,5 +62,9 @@ public class CreateRedstoneLinkGUI {
                 VoidLinkClaimPayload::encode,
                 VoidLinkClaimPayload::decode,
                 VoidLinkClaimPayload::handle);
+        NETWORK.registerMessage(id++, OpenLinkMenuPayload.class,
+                OpenLinkMenuPayload::encode,
+                OpenLinkMenuPayload::decode,
+                OpenLinkMenuPayload::handle);
     }
 }

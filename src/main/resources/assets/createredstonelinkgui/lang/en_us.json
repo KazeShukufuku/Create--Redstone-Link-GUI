@@ -2,8 +2,15 @@
   "createredstonelinkgui.configuration.title": "Create: Redstone Link GUI Configs",
   "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml": "General",
   "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml.title": "General",
+  "createredstonelinkgui.configuration.section.createredstonelinkgui-client.toml": "Client",
+  "createredstonelinkgui.configuration.section.createredstonelinkgui-client.toml.title": "Client",
   "createredstonelinkgui.configuration.moveRange": "Maximum Move Range",
   "createredstonelinkgui.configuration.moveRange.tooltip": "Maximum distance in blocks a redstone link can be moved",
+  "createredstonelinkgui.configuration.clickMode": "Menu Trigger Mode",
+  "createredstonelinkgui.configuration.clickMode.tooltip": "How to open the redstone link frequency menu (Client-side)",
+  "createredstonelinkgui.configuration.clickMode.SLOT": "Slot - Right-click frequency slot",
+  "createredstonelinkgui.configuration.clickMode.SHIFT_SLOT": "Shift+Slot - Shift + right-click frequency slot",
+  "createredstonelinkgui.configuration.clickMode.SHIFT_BLOCK": "Shift+Block - Shift + right-click anywhere",
 
   "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
   "container.createredstonelinkgui.void_link_menu": "Void Link Frequencies",
@@ -20,5 +27,9 @@
   "gui.createredstonelinkgui.move_fail_no_surface": "No surface to attach to",
   "gui.createredstonelinkgui.move_fail_cant_survive": "Cannot attach to that surface",
   "gui.createredstonelinkgui.move_fail_surface": "Cannot change surface with factory gauge connected",
-  "gui.createredstonelinkgui.move_fail_range": "Target out of range"
+  "gui.createredstonelinkgui.move_fail_range": "Target out of range",
+  "gui.createredstonelinkgui.frequency_first": "Frequency #1",
+  "gui.createredstonelinkgui.frequency_second": "Frequency #2",
+  "gui.createredstonelinkgui.own": "Left-click to own",
+  "gui.createredstonelinkgui.forfeit": "Left-click to forfeit ownership"
 }
