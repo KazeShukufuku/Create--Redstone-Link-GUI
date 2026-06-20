@@ -1,5 +1,12 @@
 ## Changelog
 
+# 1.20.1-1.8.1
+
+- Fix menu opening flow by moving link-click detection to the client and opening menus through a server packet
+- Add client-side menu trigger mode config
+- Add Void Link UI texture and frequency slot / ownership tooltips (made by 咖喱之恶魔)
+- Fix held-item frequency setting on linked levers/buttons by using the actual clicked frequency slot
+
 # 1.20.1-1.7.2
 
 - Render Create: Connected linked lever/button previews

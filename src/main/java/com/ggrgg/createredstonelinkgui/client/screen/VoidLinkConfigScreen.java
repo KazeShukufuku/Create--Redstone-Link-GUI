@@ -10,6 +10,7 @@ import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -20,13 +21,14 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> {
 
     private static final ResourceLocation BASE_TEXTURE = new ResourceLocation("create", "textures/gui/player_inventory.png");
-    private static final ResourceLocation OVERLAY_TEXTURE = new ResourceLocation("createredstonelinkgui", "textures/redstone_link.png");
+    private static final ResourceLocation OVERLAY_TEXTURE = new ResourceLocation("createredstonelinkgui", "textures/void_link.png");
 
     private static final int OVERLAY_WIDTH = 181;
     private static final int OVERLAY_HEIGHT = 88;
@@ -50,6 +52,8 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
 
     private static final int TITLE_Y_OFFSET = 4;
     private static final int HOVER_COLOR = 0x221500FF;
+    private static final int BLOCK_PREVIEW_X = 222;
+    private static final int BLOCK_PREVIEW_Y = 30;
 
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
@@ -72,9 +76,9 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
 
         this.slot1Bounds = new Rect2i(leftPos + 101, contentTop + (SLOT1_UV_Y - UV_OFFSET_Y), SLOT_SIZE, SLOT_SIZE);
         this.slot2Bounds = new Rect2i(leftPos + 137, contentTop + (SLOT2_UV_Y - UV_OFFSET_Y), SLOT_SIZE, SLOT_SIZE);
-        this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
+        this.blockPreviewBounds = new Rect2i(leftPos + BLOCK_PREVIEW_X, contentTop + BLOCK_PREVIEW_Y, 64, 64);
 
-        this.addRenderableWidget(new SkullButton(contentLeft + 81, contentTop + 63, btn -> {
+        this.addRenderableWidget(new SkullButton(contentLeft + 79, contentTop + 64, btn -> {
             Object behaviour = this.menu.getBehaviour();
             if (behaviour == null || this.minecraft.player == null) return;
 
@@ -118,6 +122,23 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
+
+        if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(0);
+            int yOffset = slot.hasItem() ? -20 : 0;
+            graphics.renderTooltip(this.minecraft.font,
+                    Component.translatable("gui.createredstonelinkgui.frequency_first")
+                            .withStyle(ChatFormatting.BLUE),
+                    mouseX, mouseY + yOffset);
+        } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(1);
+            int yOffset = slot.hasItem() ? -20 : 0;
+            graphics.renderTooltip(this.minecraft.font,
+                    Component.translatable("gui.createredstonelinkgui.frequency_second")
+                            .withStyle(ChatFormatting.BLUE),
+                    mouseX, mouseY + yOffset);
+        }
+
         this.renderTooltip(graphics, mouseX, mouseY);
     }
 
@@ -145,7 +166,7 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
         if (this.minecraft.level != null) {
             var blockState = this.minecraft.level.getBlockState(this.menu.getPos());
             var blockEntity = this.minecraft.level.getBlockEntity(this.menu.getPos());
-            BlockPreviewRenderer.render(graphics, blockState, blockEntity, x + 215, contentTop + 30);
+            BlockPreviewRenderer.render(graphics, blockState, blockEntity, x + BLOCK_PREVIEW_X, contentTop + BLOCK_PREVIEW_Y);
         }
     }
 
@@ -175,6 +196,15 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
             graphics.renderItem(cachedStack, getX(), getY());
             if (isHovered()) {
                 graphics.fill(getX(), getY(), getX() + width, getY() + height, HOVER_COLOR);
+                boolean owned = false;
+                if (behaviour != null) {
+                    var owner = VoidLinkHelper.getOwner(behaviour);
+                    owned = owner != null;
+                }
+                Component tooltip = owned
+                        ? Component.translatable("gui.createredstonelinkgui.forfeit")
+                        : Component.translatable("gui.createredstonelinkgui.own");
+                graphics.renderTooltip(VoidLinkConfigScreen.this.minecraft.font, tooltip, mouseX, mouseY);
             }
         }
 

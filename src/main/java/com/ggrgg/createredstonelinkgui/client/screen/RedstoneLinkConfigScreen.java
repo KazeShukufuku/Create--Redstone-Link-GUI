@@ -7,6 +7,7 @@ import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -15,6 +16,7 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLinkMenu> {
@@ -133,6 +135,23 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
+
+        if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(0);
+            int yOffset = slot.hasItem() ? -20 : 0;
+            graphics.renderTooltip(this.minecraft.font,
+                    Component.translatable("gui.createredstonelinkgui.frequency_first")
+                            .withStyle(ChatFormatting.BLUE),
+                    mouseX, mouseY + yOffset);
+        } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(1);
+            int yOffset = slot.hasItem() ? -20 : 0;
+            graphics.renderTooltip(this.minecraft.font,
+                    Component.translatable("gui.createredstonelinkgui.frequency_second")
+                            .withStyle(ChatFormatting.BLUE),
+                    mouseX, mouseY + yOffset);
+        }
+
         this.renderTooltip(graphics, mouseX, mouseY);
     }
 
