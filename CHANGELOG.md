@@ -1,5 +1,11 @@
 ## Changelog
 
+# 1.20.1-1.8.3
+
+- Fix Create: Connected linked analog lever preview rendering
+- Preserve signal, receiver/transmitter, and locked/powered state in non-void link previews while keeping preview orientation fixed
+- Keep Void Link previews on the item-rendered path
+
 # 1.20.1-1.8.2
 
 - Hook Forge config translation keys for Configured
