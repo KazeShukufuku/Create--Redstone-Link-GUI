@@ -150,19 +150,18 @@ public class SymbolPickerScreen extends Screen {
         Registry<net.minecraft.world.item.Item> itemRegistry = BuiltInRegistries.ITEM;
         for (String name : SYMBOL_NAMES) {
             ResourceLocation id = new ResourceLocation("frequency", name);
+            if (!itemRegistry.containsKey(id)) continue;
             var item = itemRegistry.get(id);
-            if (item != null) {
-                String path = id.getPath();
-                ItemStack stack = new ItemStack(item);
-                if (path.matches("symbol_[0-9]")) {
-                    digits.add(stack);
-                } else if (path.matches("symbol_[a-z]")) {
-                    uppercase.add(stack);
-                } else if (path.matches("symbol_[a-z]_small")) {
-                    lowercase.add(stack);
-                } else {
-                    specials.add(stack);
-                }
+            String path = id.getPath();
+            ItemStack stack = new ItemStack(item);
+            if (path.matches("symbol_[0-9]")) {
+                digits.add(stack);
+            } else if (path.matches("symbol_[a-z]")) {
+                uppercase.add(stack);
+            } else if (path.matches("symbol_[a-z]_small")) {
+                lowercase.add(stack);
+            } else {
+                specials.add(stack);
             }
         }
         currentLetters = lettersUppercase ? uppercase : lowercase;
