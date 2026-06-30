@@ -2,12 +2,34 @@
 
 This mod is made to address one gripe I've alway had with Create: needing to have items on hand to set redstone link frequencies is just too inconvenient.
 
-## How it works:
+## Feature list
 
-Shift right click (can be configured) a redstone link or any other similar block's frequency slots with empty hand to open a GUI where you can set frequencies using JEI/EMI.
+### Frequency GUI
 
-You can also move the redstone link block without breaking it.
-Should work with all blocks using redstone link frequencies.
+- Shift right-click a Redstone Link or Void Link with an empty hand to open a GUI
+- Set items in frequency slots directly from your inventory
+- JEI/EMI drag-and-drop support for frequency slots and preset slots
+- Switch between Sender and Receiver mode directly from the Redstone Link GUI
+
+### Preset System
+
+- Four preset rows for saving and loading frequency configurations
+- Copy button saves the current link frequencies into a preset row
+- Paste button applies saved preset frequencies to the current link
+- Presets are stored in player data
+
+### Relocate
+
+- Move a Redstone Link block to a new position using the Move button in the GUI
+- Visual feedback for valid and invalid targets
+- Respects Factory Gauge movement constraints when attached
+- Configurable move range
+
+### Integrations
+
+- Create Utilities J: Void Link ownership and frequency GUI support
+- Frequency Create: middle-click frequency symbols inside slots to open a symbol picker
+- Frequency Create: registers symbol items in JEI for easier picking
 
 ## Disclaimer:
 

@@ -1,0 +1,365 @@
+package com.ggrgg.createredstonelinkgui.client.screen;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
+import com.ggrgg.createredstonelinkgui.client.screen.widget.FrequencyPresetPanel;
+import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
+import com.ggrgg.createredstonelinkgui.common.menu.AbstractLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
+import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
+import com.ggrgg.createredstonelinkgui.compat.frequency.FrequencyItemHelper;
+import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerScreen;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+
+/**
+ * Abstract base for redstone link and void link config screens.
+ * Consolidates ~80% shared code between RedstoneLinkConfigScreen and VoidLinkConfigScreen.
+ * 
+ * <p>The generic bound is {@link AbstractLinkMenu}, giving subclasses direct access
+ * to {@link AbstractLinkMenu#getPos()}, {@link AbstractLinkMenu#getBehaviour()},
+ * and everything inherited from AbstractContainerMenu.
+ */
+public abstract class AbstractLinkConfigScreen<T extends AbstractLinkMenu>
+        extends AbstractContainerScreen<T> {
+
+    private static final ResourceLocation BASE_TEXTURE = new ResourceLocation("create", "textures/gui/player_inventory.png");
+
+    protected static final int OVERLAY_WIDTH = 181;
+    protected static final int OVERLAY_HEIGHT = 88;
+    protected static final int BACKPACK_WIDTH = 175;
+    protected static final int BACKPACK_HEIGHT = 108;
+    protected static final int CONTENT_TOP_OFFSET = 6;
+    protected static final int BACKPACK_TOP_OFFSET = 94;
+
+    protected static final int UV_OFFSET_X = 16;
+    protected static final int UV_OFFSET_Y = 160;
+
+    protected static final int SLOT1_UV_X = 77;
+    protected static final int SLOT1_UV_Y = 188;
+    protected static final int SLOT2_UV_X = 113;
+    protected static final int SLOT2_UV_Y = 188;
+    protected static final int SLOT_SIZE = 16;
+
+    protected static final int MOVE_UV_X = 26;
+    protected static final int MOVE_UV_Y = 223;
+    protected static final int BACK_UV_X = 165;
+    protected static final int BACK_UV_Y = 223;
+    protected static final int ICON_SIZE = 18;
+
+    private static final int TITLE_Y_OFFSET = 4;
+
+    public Rect2i slot1Bounds;
+    public Rect2i slot2Bounds;
+    public Rect2i blockPreviewBounds;
+
+    public FrequencyPresetPanel presetPanel;
+    public Rect2i presetPanelBounds;
+
+    public AbstractLinkConfigScreen(T menu, Inventory playerInv, Component title) {
+        super(menu, playerInv, title);
+        this.imageWidth = 256;
+        this.imageHeight = CONTENT_TOP_OFFSET + OVERLAY_HEIGHT + BACKPACK_HEIGHT + 6;
+        this.inventoryLabelY = this.imageHeight - 94;
+    }
+
+    /** The overlay texture for this link type (redstone_link.png or void_link.png). */
+    protected abstract ResourceLocation getOverlayTexture();
+
+    /**
+     * Apply a frequency change on the server side.
+     * Default implementation uses {@link FrequencyHelper#applyFrequencyChangeDirect} via the menu.
+     */
+    protected void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack) {
+        Object behaviour = this.menu.getBehaviour();
+        if (behaviour != null) {
+            FrequencyHelper.applyFrequencyChangeDirect(behaviour, isFirst, stack);
+        }
+    }
+
+    /** Block preview X offset relative to screen left. */
+    protected abstract int getBlockPreviewX();
+
+    /** Block preview Y offset relative to content top. */
+    protected abstract int getBlockPreviewY();
+
+    /**
+     * Hook for subclasses to add extra widgets (toggle, skull button, etc.).
+     * Called at the end of init().
+     */
+    protected void addExtraWidgets(int contentLeft, int contentTop) {}
+
+    @Override
+    protected void init() {
+        super.init();
+
+        int leftPos = (this.width - this.imageWidth) / 2;
+        int contentLeft = leftPos + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
+        int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
+
+        // Frequency slot bounds use the original overlay positions.
+        this.slot1Bounds = new Rect2i(
+            leftPos + 101,
+            contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
+            SLOT_SIZE,
+            SLOT_SIZE
+        );
+        this.slot2Bounds = new Rect2i(
+            leftPos + 137,
+            contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
+            SLOT_SIZE,
+            SLOT_SIZE
+        );
+        this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
+
+        int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH + 40;
+        int panelY = contentTop + 2;
+        FrequencyPresetData presetData = this.menu.getPresetData();
+        this.presetPanel = new FrequencyPresetPanel(panelX, panelY, this.menu.getPos(), presetData,
+            () -> true,
+            () -> this.menu.getSlot(0).getItem(),
+            () -> this.menu.getSlot(1).getItem(),
+            (slotIndex, stack) -> applyFrequencyChange(slotIndex, slotIndex == 0, stack));
+        this.presetPanelBounds = new Rect2i(panelX, panelY,
+            FrequencyPresetPanel.PANEL_WIDTH, FrequencyPresetPanel.PANEL_HEIGHT);
+
+        ImageButton moveButton = new ImageButton(
+            contentLeft + 10, contentTop + 63,
+            ICON_SIZE, ICON_SIZE,
+            getOverlayTexture(),
+            MOVE_UV_X, MOVE_UV_Y,
+            Component.translatable("gui.createredstonelinkgui.relocate"),
+            (btn) -> {
+                RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
+                this.minecraft.setScreen(null);
+            }
+        );
+        this.addRenderableWidget(moveButton);
+
+        ImageButton backButton = new ImageButton(
+            contentLeft + 149, contentTop + 63,
+            ICON_SIZE, ICON_SIZE,
+            getOverlayTexture(),
+            BACK_UV_X, BACK_UV_Y,
+            Component.translatable("gui.createredstonelinkgui.close"),
+            (btn) -> this.minecraft.setScreen(null)
+        );
+        this.addRenderableWidget(backButton);
+
+        addExtraWidgets(contentLeft, contentTop);
+    }
+
+    public void updateFrequencySlot(int slotIndex, ItemStack stack) {
+        Object behaviour = this.menu.getBehaviour();
+        if (behaviour != null) {
+            applyFrequencyChange(slotIndex, slotIndex == 0, stack);
+        }
+        com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload payload =
+            new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
+                this.menu.getPos(), stack, slotIndex);
+        CreateRedstoneLinkGUI.NETWORK.sendToServer(payload);
+    }
+
+    private int hitTestFrequencySlot(double mouseX, double mouseY) {
+        if (slot1Bounds != null && slot1Bounds.contains((int) mouseX, (int) mouseY)) return 0;
+        if (slot2Bounds != null && slot2Bounds.contains((int) mouseX, (int) mouseY)) return 1;
+        return -1;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Check preset panel first
+        if (presetPanel != null) {
+            // Copy/paste buttons (left click only, handled by panel)
+            if (button == 0 && presetPanel.mouseClicked(mouseX, mouseY, button)) {
+                return true;
+            }
+
+            // Middle-click on preset slots: open symbol picker
+            if (button == 2) {
+                FrequencyPresetData presetData = presetPanel.getPresetData();
+                for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+                    for (int col = 0; col < 2; col++) {
+                        Rect2i bounds = presetPanel.getSlotBounds(row, col);
+                        if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
+                            ItemStack current = presetData.getStack(row, col);
+                            if (FrequencyItemHelper.isFrequencySymbol(current)) {
+                                final int r = row;
+                                final int c = col;
+                                Minecraft.getInstance().setScreen(new SymbolPickerScreen(this.menu.getPos(),
+                                    stack -> {
+                                        int revision = PresetSyncRevision.nextLocalRevision();
+                                        presetData.setStack(r, c, stack);
+                                        CreateRedstoneLinkGUI.NETWORK.sendToServer(
+                                            new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(r, c, stack, revision));
+                                    }));
+                                return true;
+                            }
+                            return true; // consume click
+                        }
+                    }
+                }
+            }
+
+            if (button == 0 || button == 1) {
+                FrequencyPresetData presetData = presetPanel.getPresetData();
+                for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+                    for (int col = 0; col < 2; col++) {
+                        Rect2i bounds = presetPanel.getSlotBounds(row, col);
+                        if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
+                            ItemStack target = ItemStack.EMPTY;
+                            if (button == 0) {
+                                ItemStack stack = this.menu.getCarried();
+                                if (!stack.isEmpty()) {
+                                    target = stack.copy();
+                                    target.setCount(1);
+                                }
+                            }
+                            int revision = PresetSyncRevision.nextLocalRevision();
+                            presetData.setStack(row, col, target);
+                            CreateRedstoneLinkGUI.NETWORK.sendToServer(
+                                new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(row, col, target, revision));
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Middle-click on frequency slots
+        if (button == 2) {
+            int slot = hitTestFrequencySlot(mouseX, mouseY);
+            if (slot >= 0) {
+                ItemStack current = this.menu.getSlot(slot).getItem();
+                if (FrequencyItemHelper.isFrequencySymbol(current)) {
+                    Minecraft.getInstance().setScreen(new SymbolPickerScreen(this.menu.getPos(), slot));
+                    return true;
+                }
+                return true;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(graphics);
+        super.render(graphics, mouseX, mouseY, partialTick);
+
+        if (presetPanel != null) {
+            presetPanel.render(graphics, mouseX, mouseY, partialTick);
+        }
+
+        if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(0);
+            int lineCount = 1 + (FrequencyItemHelper.isFrequencySymbol(slot.getItem()) ? 1 : 0);
+            int yOffset = -20 - (lineCount - 1) * this.minecraft.font.lineHeight;
+            List<Component> tooltipLines = new ArrayList<>();
+            tooltipLines.add(Component.translatable("gui.createredstonelinkgui.frequency_first")
+                    .withStyle(ChatFormatting.BLUE));
+            if (FrequencyItemHelper.isFrequencySymbol(slot.getItem())) {
+                tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
+                        .withStyle(ChatFormatting.GOLD));
+            }
+            graphics.renderTooltip(this.minecraft.font, tooltipLines, java.util.Optional.empty(),
+                    mouseX, mouseY + yOffset);
+        } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(1);
+            int lineCount = 1 + (FrequencyItemHelper.isFrequencySymbol(slot.getItem()) ? 1 : 0);
+            int yOffset = -20 - (lineCount - 1) * this.minecraft.font.lineHeight;
+            List<Component> tooltipLines = new ArrayList<>();
+            tooltipLines.add(Component.translatable("gui.createredstonelinkgui.frequency_second")
+                    .withStyle(ChatFormatting.BLUE));
+            if (FrequencyItemHelper.isFrequencySymbol(slot.getItem())) {
+                tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
+                        .withStyle(ChatFormatting.GOLD));
+            }
+            graphics.renderTooltip(this.minecraft.font, tooltipLines, java.util.Optional.empty(),
+                    mouseX, mouseY + yOffset);
+        } else if (presetPanel != null) {
+            // Preset panel tooltips
+            presetPanel.renderTooltips(graphics, mouseX, mouseY);
+        }
+
+        this.renderTooltip(graphics, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+        int x = (this.width - this.imageWidth) / 2;
+        int y = (this.height - this.imageHeight) / 2;
+
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
+        int contentTop = y + CONTENT_TOP_OFFSET;
+
+        graphics.blit(getOverlayTexture(), contentLeft, contentTop, UV_OFFSET_X, UV_OFFSET_Y,
+                OVERLAY_WIDTH, OVERLAY_HEIGHT, 256, 256);
+
+        int backpackX = x + (this.imageWidth - BACKPACK_WIDTH) / 2;
+        int backpackY = y + BACKPACK_TOP_OFFSET;
+        graphics.blit(BASE_TEXTURE, backpackX, backpackY, 0, 0, BACKPACK_WIDTH, BACKPACK_HEIGHT, 256, 256);
+
+        Font font = this.minecraft.font;
+        Component titleText = Component.translatable("gui.createredstonelinkgui.frequencies_settings");
+        int titleWidth = font.width(titleText);
+        int titleX = contentLeft + (OVERLAY_WIDTH - titleWidth) / 2;
+        int titleY = contentTop + TITLE_Y_OFFSET;
+        graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
+
+        if (this.minecraft.level != null) {
+            var blockState = this.minecraft.level.getBlockState(this.menu.getPos());
+            var blockEntity = this.minecraft.level.getBlockEntity(this.menu.getPos());
+            BlockPreviewRenderer.render(graphics, blockState, blockEntity,
+                    x + getBlockPreviewX(), contentTop + getBlockPreviewY());
+        }
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {}
+
+    protected static class ImageButton extends Button {
+        private final ResourceLocation texture;
+        private final int u, v;
+        private final int texWidth, texHeight;
+        private final Component tooltip;
+        private static final int HOVER_COLOR = 0x22_1500FF;
+
+        public ImageButton(int x, int y, int width, int height, ResourceLocation texture,
+                           int u, int v, Component tooltip, OnPress onPress) {
+            super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
+            this.texture = texture;
+            this.u = u;
+            this.v = v;
+            this.texWidth = 256;
+            this.texHeight = 256;
+            this.tooltip = tooltip;
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.blit(texture, getX(), getY(), u, v, width, height, texWidth, texHeight);
+            if (isHovered()) {
+                graphics.fill(getX(), getY(), getX() + width, getY() + height, HOVER_COLOR);
+                if (tooltip != null) {
+                    Font font = net.minecraft.client.Minecraft.getInstance().font;
+                    graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                }
+            }
+        }
+    }
+}

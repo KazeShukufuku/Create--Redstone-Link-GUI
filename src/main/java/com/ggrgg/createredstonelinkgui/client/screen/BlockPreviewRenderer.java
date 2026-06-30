@@ -34,9 +34,11 @@ import net.minecraft.world.level.block.state.properties.Property;
 
 public class BlockPreviewRenderer {
     private static final String CREATE_CONNECTED = "create_connected";
+    private static final String LINKED_LEVER = "linked_lever";
     private static final String LINKED_ANALOG_LEVER = "linked_analog_lever";
     private static final int PREVIEW_X_OFFSET = 22;
     private static final int PREVIEW_Y_OFFSET = 62;
+    private static final int LINKED_LEVER_PREVIEW_X_OFFSET = 5;
     private static final int PREVIEW_X_ROTATION = 25;
     private static final int PREVIEW_Y_ROTATION = 135;
     private static final int PREVIEW_SCALE = 42;
@@ -58,7 +60,7 @@ public class BlockPreviewRenderer {
         if (shouldRenderStatePreview(blockState, blockEntity)) {
             BlockState previewState = getFixedPreviewState(blockState);
 
-            int previewX = x + PREVIEW_X_OFFSET;
+            int previewX = x + PREVIEW_X_OFFSET + getPreviewXOffset(blockState);
             int previewY = y + PREVIEW_Y_OFFSET;
             renderBlockState(graphics, previewState, previewX, previewY,
                     PREVIEW_X_ROTATION, PREVIEW_Y_ROTATION,
@@ -142,9 +144,18 @@ public class BlockPreviewRenderer {
         }
 
         String path = id.getPath();
-        return path.equals("linked_lever")
+        return path.equals(LINKED_LEVER)
                 || path.equals(LINKED_ANALOG_LEVER)
                 || path.startsWith("linked_") && path.endsWith("_button");
+    }
+
+    private static int getPreviewXOffset(BlockState blockState) {
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(blockState.getBlock());
+        if (!CREATE_CONNECTED.equals(id.getNamespace())) {
+            return 0;
+        }
+        String path = id.getPath();
+        return path.equals(LINKED_LEVER) || path.equals(LINKED_ANALOG_LEVER) ? LINKED_LEVER_PREVIEW_X_OFFSET : 0;
     }
 
     private static boolean isLinkedAnalogLever(BlockState blockState) {

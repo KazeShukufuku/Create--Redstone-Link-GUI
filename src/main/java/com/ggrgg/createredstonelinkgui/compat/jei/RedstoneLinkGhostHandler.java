@@ -1,6 +1,9 @@
 package com.ggrgg.createredstonelinkgui.compat.jei;
 
+import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.constants.VanillaTypes;
@@ -24,8 +27,7 @@ public class RedstoneLinkGhostHandler implements IGhostIngredientHandler<Redston
 
         ItemStack stack = itemStackOptional.get();
 
-        // Optimized Allocation: Explicitly size the list to 2 elements to prevent drag rendering arrays resizes
-        List<Target<I>> targets = new ArrayList<>(2);
+        List<Target<I>> targets = new ArrayList<>(10);
 
         targets.add(new Target<>() {
             @Override public Rect2i getArea() { return screen.slot1Bounds; }
@@ -36,6 +38,26 @@ public class RedstoneLinkGhostHandler implements IGhostIngredientHandler<Redston
             @Override public Rect2i getArea() { return screen.slot2Bounds; }
             @Override public void accept(I ing) { screen.updateFrequencySlot(1, stack); }
         });
+
+        if (screen.presetPanel != null) {
+            for (int row = 0; row < 4; row++) {
+                for (int col = 0; col < 2; col++) {
+                    final int r = row;
+                    final int c = col;
+                    Rect2i bounds = screen.presetPanel.getSlotBounds(row, col);
+                    if (bounds != null) {
+                        targets.add(new Target<>() {
+                            @Override public Rect2i getArea() { return bounds; }
+                            @Override public void accept(I ing) {
+                                int revision = PresetSyncRevision.nextLocalRevision();
+                                screen.presetPanel.getPresetData().setStack(r, c, stack);
+                                CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack, revision));
+                            }
+                        });
+                    }
+                }
+            }
+        }
 
         return targets;
     }
