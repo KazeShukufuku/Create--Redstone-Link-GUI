@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.compat.jei;
 import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
 import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.constants.VanillaTypes;
@@ -48,8 +49,9 @@ public class RedstoneLinkGhostHandler implements IGhostIngredientHandler<Redston
                         targets.add(new Target<>() {
                             @Override public Rect2i getArea() { return bounds; }
                             @Override public void accept(I ing) {
+                                int revision = PresetSyncRevision.nextLocalRevision();
                                 screen.presetPanel.getPresetData().setStack(r, c, stack);
-                                CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack));
+                                CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack, revision));
                             }
                         });
                     }

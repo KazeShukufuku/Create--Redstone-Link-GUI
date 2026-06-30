@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.compat.emi;
 import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.client.screen.AbstractLinkConfigScreen;
 import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 
 import dev.emi.emi.api.EmiDragDropHandler;
 import dev.emi.emi.api.stack.EmiIngredient;
@@ -38,8 +39,9 @@ public class EMIDragDropHandler<T extends AbstractLinkConfigScreen<?>> implement
                 for (int col = 0; col < 2; col++) {
                     Rect2i bounds = screen.presetPanel.getSlotBounds(row, col);
                     if (bounds != null && bounds.contains(x, y)) {
+                        int revision = PresetSyncRevision.nextLocalRevision();
                         screen.presetPanel.getPresetData().setStack(row, col, itemStack);
-                        CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(row, col, itemStack));
+                        CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(row, col, itemStack, revision));
                         return true;
                     }
                 }

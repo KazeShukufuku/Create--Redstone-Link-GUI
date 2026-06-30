@@ -8,6 +8,7 @@ import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
 import com.ggrgg.createredstonelinkgui.common.network.CopyToPresetPayload;
 import com.ggrgg.createredstonelinkgui.common.network.PasteFromPresetPayload;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 import com.ggrgg.createredstonelinkgui.compat.frequency.FrequencyItemHelper;
 
 import net.minecraft.ChatFormatting;
@@ -129,14 +130,19 @@ public class FrequencyPresetPanel {
     private final List<Rect2i> copyBtnBounds;
     private final List<Rect2i> pasteBtnBounds;
     private final Supplier<Boolean> copyEnabled;
+    private final Supplier<ItemStack> firstFrequency;
+    private final Supplier<ItemStack> secondFrequency;
 
     public FrequencyPresetPanel(int panelX, int panelY, BlockPos linkPos, FrequencyPresetData presetData,
-                                Supplier<Boolean> copyEnabled) {
+                                Supplier<Boolean> copyEnabled, Supplier<ItemStack> firstFrequency,
+                                Supplier<ItemStack> secondFrequency) {
         this.panelX = panelX;
         this.panelY = panelY;
         this.linkPos = linkPos;
         this.presetData = presetData;
         this.copyEnabled = copyEnabled;
+        this.firstFrequency = firstFrequency;
+        this.secondFrequency = secondFrequency;
         this.slotBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT * 2);
         this.copyBtnBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT);
         this.pasteBtnBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT);
@@ -155,7 +161,7 @@ public class FrequencyPresetPanel {
     }
 
     private boolean isPasteEnabled(int row) {
-        return !presetData.getStack(row, 0).isEmpty() || !presetData.getStack(row, 1).isEmpty();
+        return presetData.hasPreset(row);
     }
 
     // ==================== 渲染入口 ====================
@@ -295,7 +301,11 @@ public class FrequencyPresetPanel {
 
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             if (globalCopyEnabled && copyBtnBounds.get(row).contains(mx, my)) {
-                CreateRedstoneLinkGUI.NETWORK.sendToServer(new CopyToPresetPayload(linkPos, row));
+                ItemStack first = firstFrequency.get();
+                ItemStack second = secondFrequency.get();
+                int revision = PresetSyncRevision.nextLocalRevision();
+                presetData.setPreset(row, first, second);
+                CreateRedstoneLinkGUI.NETWORK.sendToServer(new CopyToPresetPayload(linkPos, row, revision, first, second));
                 return true;
             }
             if (isPasteEnabled(row) && pasteBtnBounds.get(row).contains(mx, my)) {

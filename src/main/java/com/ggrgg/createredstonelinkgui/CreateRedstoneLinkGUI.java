@@ -7,6 +7,7 @@ import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.CopyToPresetPayload;
 import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
 import com.ggrgg.createredstonelinkgui.common.network.PasteFromPresetPayload;
+import com.ggrgg.createredstonelinkgui.common.network.PresetDataSyncPayload;
 import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
@@ -81,5 +82,9 @@ public class CreateRedstoneLinkGUI {
                 PresetSlotUpdatePayload::encode,
                 PresetSlotUpdatePayload::decode,
                 PresetSlotUpdatePayload::handle);
+        NETWORK.registerMessage(id++, PresetDataSyncPayload.class,
+                PresetDataSyncPayload::encode,
+                PresetDataSyncPayload::decode,
+                PresetDataSyncPayload::handle);
     }
 }

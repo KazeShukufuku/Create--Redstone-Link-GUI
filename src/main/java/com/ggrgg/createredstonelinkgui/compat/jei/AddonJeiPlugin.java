@@ -8,6 +8,7 @@ import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
 import com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen;
 import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.runtime.IJeiRuntime;
@@ -120,8 +121,9 @@ public class AddonJeiPlugin implements IModPlugin {
                             targets.add(new Target<>() {
                                 @Override public Rect2i getArea() { return bounds; }
                                 @Override public void accept(I ing) {
+                                    int revision = PresetSyncRevision.nextLocalRevision();
                                     screen.presetPanel.getPresetData().setStack(r, c, stack);
-                                    CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack));
+                                    CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack, revision));
                                 }
                             });
                         }

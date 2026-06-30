@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.common.menu;
 import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
 import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
@@ -47,11 +48,13 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
 
     protected final BlockPos pos;
     protected final Player player;
+    protected final FrequencyPresetData presetData;
 
     protected AbstractLinkMenu(int containerId, Inventory playerInventory, BlockPos pos, MenuType<?> menuType) {
         super(menuType, containerId);
         this.pos = pos;
         this.player = playerInventory.player;
+        this.presetData = FrequencyPresetData.get(playerInventory.player);
     }
 
     // ==================== Subclass hooks ====================
@@ -77,7 +80,6 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
      * <b>after</b> adding frequency slots so that preset slots start at index 2.
      */
     protected void addPresetSlots(Inventory playerInventory) {
-        FrequencyPresetData presetData = FrequencyPresetData.get(playerInventory.player);
         for (int row = 0; row < PRESET_ROWS; row++) {
             for (int col = 0; col < PRESET_SLOTS_PER_ROW; col++) {
                 final int r = row;
@@ -89,8 +91,9 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
                     () -> presetData.getStack(r, c),
                     (id, stack) -> {
                         if (playerInventory.player.level().isClientSide()) {
+                            int revision = PresetSyncRevision.nextLocalRevision();
                             presetData.setStack(r, c, stack);
-                            CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack));
+                            CreateRedstoneLinkGUI.NETWORK.sendToServer(new PresetSlotUpdatePayload(r, c, stack, revision));
                         }
                     }
                 ));
@@ -210,7 +213,7 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
      * Get the preset data for this player (used by the GUI panel).
      */
     public FrequencyPresetData getPresetData() {
-        return FrequencyPresetData.get(this.player);
+        return this.presetData;
     }
 
     public BlockPos getPos() {

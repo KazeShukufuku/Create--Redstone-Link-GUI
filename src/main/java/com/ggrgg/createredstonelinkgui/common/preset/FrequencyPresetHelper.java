@@ -83,8 +83,8 @@ public class FrequencyPresetHelper {
         if (be == null) return false;
 
         FrequencyPresetData data = FrequencyPresetData.get(player);
+        if (!data.hasPreset(presetIndex)) return false;
         CompoundTag presetTag = data.getAsTag(presetIndex);
-        if (presetTag.isEmpty()) return false;
 
         boolean anySuccess = false;
 

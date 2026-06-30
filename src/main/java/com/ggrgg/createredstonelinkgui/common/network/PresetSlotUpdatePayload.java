@@ -9,16 +9,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 
-public record PresetSlotUpdatePayload(int presetIndex, int slotIndex, ItemStack stack) {
+public record PresetSlotUpdatePayload(int presetIndex, int slotIndex, ItemStack stack, int revision) {
 
     public static void encode(PresetSlotUpdatePayload payload, FriendlyByteBuf buffer) {
         buffer.writeInt(payload.presetIndex);
         buffer.writeInt(payload.slotIndex);
         buffer.writeItem(payload.stack);
+        buffer.writeInt(payload.revision);
     }
 
     public static PresetSlotUpdatePayload decode(FriendlyByteBuf buffer) {
-        return new PresetSlotUpdatePayload(buffer.readInt(), buffer.readInt(), buffer.readItem());
+        return new PresetSlotUpdatePayload(buffer.readInt(), buffer.readInt(), buffer.readItem(), buffer.readInt());
     }
 
     public static void handle(PresetSlotUpdatePayload payload, Supplier<NetworkEvent.Context> contextSupplier) {
@@ -27,6 +28,7 @@ public record PresetSlotUpdatePayload(int presetIndex, int slotIndex, ItemStack 
             ServerPlayer player = context.getSender();
             if (player == null) return;
             FrequencyPresetData.get(player).setStack(payload.presetIndex, payload.slotIndex, payload.stack);
+            PresetDataSyncPayload.sendTo(player, payload.revision);
         });
         context.setPacketHandled(true);
     }

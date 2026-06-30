@@ -9,6 +9,7 @@ import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
 import com.ggrgg.createredstonelinkgui.common.menu.AbstractLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
+import com.ggrgg.createredstonelinkgui.common.preset.PresetSyncRevision;
 import com.ggrgg.createredstonelinkgui.compat.frequency.FrequencyItemHelper;
 import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerScreen;
 
@@ -128,11 +129,11 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractLinkMenu>
 
         int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH + 40;
         int panelY = contentTop + 2;
-        FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
-        // Copy is enabled if either frequency slot has an item
+        FrequencyPresetData presetData = this.menu.getPresetData();
         this.presetPanel = new FrequencyPresetPanel(panelX, panelY, this.menu.getPos(), presetData,
-            () -> !this.menu.getSlot(0).getItem().isEmpty()
-               || !this.menu.getSlot(1).getItem().isEmpty());
+            () -> true,
+            () -> this.menu.getSlot(0).getItem(),
+            () -> this.menu.getSlot(1).getItem());
         this.presetPanelBounds = new Rect2i(panelX, panelY,
             FrequencyPresetPanel.PANEL_WIDTH, FrequencyPresetPanel.PANEL_HEIGHT);
 
@@ -201,13 +202,38 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractLinkMenu>
                                 final int c = col;
                                 Minecraft.getInstance().setScreen(new SymbolPickerScreen(this.menu.getPos(),
                                     stack -> {
+                                        int revision = PresetSyncRevision.nextLocalRevision();
                                         presetData.setStack(r, c, stack);
                                         CreateRedstoneLinkGUI.NETWORK.sendToServer(
-                                            new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(r, c, stack));
+                                            new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(r, c, stack, revision));
                                     }));
                                 return true;
                             }
                             return true; // consume click
+                        }
+                    }
+                }
+            }
+
+            if (button == 0 || button == 1) {
+                FrequencyPresetData presetData = presetPanel.getPresetData();
+                for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+                    for (int col = 0; col < 2; col++) {
+                        Rect2i bounds = presetPanel.getSlotBounds(row, col);
+                        if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
+                            ItemStack target = ItemStack.EMPTY;
+                            if (button == 0) {
+                                ItemStack stack = this.menu.getCarried();
+                                if (!stack.isEmpty()) {
+                                    target = stack.copy();
+                                    target.setCount(1);
+                                }
+                            }
+                            int revision = PresetSyncRevision.nextLocalRevision();
+                            presetData.setStack(row, col, target);
+                            CreateRedstoneLinkGUI.NETWORK.sendToServer(
+                                new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(row, col, target, revision));
+                            return true;
                         }
                     }
                 }

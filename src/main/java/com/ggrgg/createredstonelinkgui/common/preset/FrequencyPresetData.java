@@ -45,20 +45,40 @@ public class FrequencyPresetData {
         }
     }
 
+    public static void applyToPlayer(Player player, CompoundTag tag) {
+        if (player != null) {
+            player.getPersistentData().put(ROOT_KEY, tag.copy());
+        }
+    }
+
     public ItemStack getStack(int presetIndex, int slotIndex) {
         if (presetIndex < 0 || presetIndex >= PRESET_COUNT) return ItemStack.EMPTY;
         return slotIndex == 0 ? presets.get(presetIndex).stack0 : presets.get(presetIndex).stack1;
     }
 
+    public boolean hasPreset(int presetIndex) {
+        if (presetIndex < 0 || presetIndex >= PRESET_COUNT) return false;
+        return presets.get(presetIndex).saved;
+    }
+
+    public void setPreset(int presetIndex, ItemStack first, ItemStack last) {
+        if (presetIndex < 0 || presetIndex >= PRESET_COUNT) return;
+        Preset preset = presets.get(presetIndex);
+        preset.stack0 = normalizeStack(first);
+        preset.stack1 = normalizeStack(last);
+        preset.saved = true;
+        saveToOwner();
+    }
+
     public void setStack(int presetIndex, int slotIndex, ItemStack stack) {
         if (presetIndex < 0 || presetIndex >= PRESET_COUNT) return;
-        ItemStack copy = stack.copy();
-        if (!copy.isEmpty()) copy.setCount(1);
+        ItemStack copy = normalizeStack(stack);
         if (slotIndex == 0) {
             presets.get(presetIndex).stack0 = copy;
         } else {
             presets.get(presetIndex).stack1 = copy;
         }
+        presets.get(presetIndex).saved = true;
         saveToOwner();
     }
 
@@ -69,11 +89,12 @@ public class FrequencyPresetData {
         if (presetIndex < 0 || presetIndex >= PRESET_COUNT) return;
         Preset p = presets.get(presetIndex);
         p.stack0 = tag.contains("First", Tag.TAG_COMPOUND)
-            ? ItemStack.of(tag.getCompound("First"))
+            ? normalizeStack(ItemStack.of(tag.getCompound("First")))
             : ItemStack.EMPTY;
         p.stack1 = tag.contains("Last", Tag.TAG_COMPOUND)
-            ? ItemStack.of(tag.getCompound("Last"))
+            ? normalizeStack(ItemStack.of(tag.getCompound("Last")))
             : ItemStack.EMPTY;
+        p.saved = true;
         saveToOwner();
     }
 
@@ -95,6 +116,7 @@ public class FrequencyPresetData {
         for (int i = 0; i < PRESET_COUNT; i++) {
             CompoundTag entry = new CompoundTag();
             Preset p = presets.get(i);
+            if (p.saved) entry.putBoolean("Saved", true);
             if (!p.stack0.isEmpty()) entry.put("0", p.stack0.save(new CompoundTag()));
             if (!p.stack1.isEmpty()) entry.put("1", p.stack1.save(new CompoundTag()));
             list.add(entry);
@@ -104,16 +126,22 @@ public class FrequencyPresetData {
     }
 
     public void deserializeNBT(CompoundTag root) {
+        for (Preset preset : presets) {
+            preset.stack0 = ItemStack.EMPTY;
+            preset.stack1 = ItemStack.EMPTY;
+            preset.saved = false;
+        }
         ListTag list = root.getList("presets", Tag.TAG_COMPOUND);
         for (int i = 0; i < Math.min(list.size(), PRESET_COUNT); i++) {
             CompoundTag entry = list.getCompound(i);
             Preset p = presets.get(i);
             p.stack0 = entry.contains("0", Tag.TAG_COMPOUND)
-                ? ItemStack.of(entry.getCompound("0"))
+                ? normalizeStack(ItemStack.of(entry.getCompound("0")))
                 : ItemStack.EMPTY;
             p.stack1 = entry.contains("1", Tag.TAG_COMPOUND)
-                ? ItemStack.of(entry.getCompound("1"))
+                ? normalizeStack(ItemStack.of(entry.getCompound("1")))
                 : ItemStack.EMPTY;
+            p.saved = entry.getBoolean("Saved") || !p.stack0.isEmpty() || !p.stack1.isEmpty();
         }
     }
 
@@ -135,6 +163,12 @@ public class FrequencyPresetData {
         return stack.isEmpty() ? new CompoundTag() : stack.save(new CompoundTag());
     }
 
+    private static ItemStack normalizeStack(ItemStack stack) {
+        ItemStack copy = stack.copy();
+        if (!copy.isEmpty()) copy.setCount(1);
+        return copy;
+    }
+
     private void saveToOwner() {
         if (owner != null) {
             owner.getPersistentData().put(ROOT_KEY, serializeNBT());
@@ -144,5 +178,6 @@ public class FrequencyPresetData {
     private static class Preset {
         ItemStack stack0 = ItemStack.EMPTY;
         ItemStack stack1 = ItemStack.EMPTY;
+        boolean saved = false;
     }
 }
