@@ -1,7 +1,19 @@
 ## Changelog
 
+# 1.20.1-1.9.1
+
+- Fix broken slots interaction caused by refactoring
+- Fix deleting items dropped into slots
+
+# 1.20.1-1.9.0
+
+- Add preset copy & paste function
+- Refactor shared Redstone Link and Void Link menu/screen code
+
 # 1.20.1-1.8.3
 
+- Compat for Frequency Create by registering that mod's items in JEI and copying its menu
+- Backend reconstruction
 - Fix Create: Connected linked analog lever preview rendering
 - Preserve signal, receiver/transmitter, and locked/powered state in non-void link previews while keeping preview orientation fixed
 - Keep Void Link previews on the item-rendered path

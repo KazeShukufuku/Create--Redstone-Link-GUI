@@ -1,5 +1,5 @@
 {
-  "createredstonelinkgui.configuration.title": "机械动力：无线红石信号终端GUI",
+  "createredstonelinkgui.configuration.title": "机械动力：无线红石信号终端 GUI",
   "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml": "通用",
   "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml.title": "通用",
   "createredstonelinkgui.configuration.section.createredstonelinkgui-client.toml": "客户端",
@@ -7,7 +7,7 @@
   "createredstonelinkgui.configuration.moveRange": "最大移动范围",
   "createredstonelinkgui.configuration.moveRange.tooltip": "终端可移动的最大距离",
   "createredstonelinkgui.configuration.clickMode": "菜单触发模式",
-  "createredstonelinkgui.configuration.clickMode.tooltip": "如何打开终端频率菜单（纯客户端）\nSLOT - 右键点击频率槽\nSHIFT_SLOT - Shift + 右键点击频率槽\nSHIFT_BLOCK - Shift + 右键点击任意处",
+  "createredstonelinkgui.configuration.clickMode.tooltip": "如何打开终端频率菜单（纯客户端）\nSLOT - 右键点击频率槽\nSHIFT_SLOT - Shift + 右键点击频率槽\nSHIFT_BLOCK - Shift + 右键点击任意位置",
 
   "container.createredstonelinkgui.redstone_link_menu": "无线红石终端频率",
   "container.createredstonelinkgui.void_link_menu": "虚空链接频率",
@@ -28,5 +28,9 @@
   "gui.createredstonelinkgui.frequency_first": "频率 #1",
   "gui.createredstonelinkgui.frequency_second": "频率 #2",
   "gui.createredstonelinkgui.own": "左键认领",
-  "gui.createredstonelinkgui.forfeit": "左键取消认领"
+  "gui.createredstonelinkgui.forfeit": "左键取消认领",
+  "gui.createredstonelinkgui.middle_click_swap": "中键打开符号列表",
+  "gui.createredstonelinkgui.presets": "预设",
+  "gui.createredstonelinkgui.copy_to_preset": "将频率复制到预设 %d",
+  "gui.createredstonelinkgui.paste_from_preset": "从预设 %d 粘贴频率"
 }

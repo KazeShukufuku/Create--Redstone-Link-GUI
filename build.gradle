@@ -88,6 +88,7 @@ dependencies {
 
     runtimeOnly(fg.deobf("curse.maven:create-connected-947914:7593867"))
     runtimeOnly(fg.deobf("curse.maven:create-utilities-j-1437484:${create_utilities_j_file_id}"))
+    runtimeOnly(fg.deobf("curse.maven:frequency-create-1535008:${frequency_create_file_id}"))
 
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"))
     compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}"))
@@ -110,6 +111,7 @@ tasks.named('processResources', ProcessResources).configure {
             jei_version_range      : jei_version_range,
             emi_version_range      : emi_version_range,
             create_utilities_j_version_range: create_utilities_j_version_range,
+            frequency_create_version_range: frequency_create_version_range,
     ]
     inputs.properties replaceProperties
     filesMatching(['META-INF/mods.toml']) {

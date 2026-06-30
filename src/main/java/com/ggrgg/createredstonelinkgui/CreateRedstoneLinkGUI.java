@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.network.CopyToPresetPayload;
 import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
+import com.ggrgg.createredstonelinkgui.common.network.PasteFromPresetPayload;
+import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
@@ -66,5 +69,17 @@ public class CreateRedstoneLinkGUI {
                 OpenLinkMenuPayload::encode,
                 OpenLinkMenuPayload::decode,
                 OpenLinkMenuPayload::handle);
+        NETWORK.registerMessage(id++, CopyToPresetPayload.class,
+                CopyToPresetPayload::encode,
+                CopyToPresetPayload::decode,
+                CopyToPresetPayload::handle);
+        NETWORK.registerMessage(id++, PasteFromPresetPayload.class,
+                PasteFromPresetPayload::encode,
+                PasteFromPresetPayload::decode,
+                PasteFromPresetPayload::handle);
+        NETWORK.registerMessage(id++, PresetSlotUpdatePayload.class,
+                PresetSlotUpdatePayload::encode,
+                PresetSlotUpdatePayload::decode,
+                PresetSlotUpdatePayload::handle);
     }
 }

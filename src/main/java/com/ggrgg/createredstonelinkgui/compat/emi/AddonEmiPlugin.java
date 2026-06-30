@@ -13,16 +13,22 @@ public class AddonEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
-        registry.addDragDropHandler(RedstoneLinkConfigScreen.class, new RedstoneLinkEmiDragHandler());
-        registry.addDragDropHandler(VoidLinkConfigScreen.class, new VoidLinkEmiDragHandler());
+        registry.addDragDropHandler(RedstoneLinkConfigScreen.class, new EMIDragDropHandler<>());
+        registry.addDragDropHandler(VoidLinkConfigScreen.class, new EMIDragDropHandler<>());
         registry.addExclusionArea(RedstoneLinkConfigScreen.class, (screen, consumer) -> {
             if (screen.blockPreviewBounds != null) {
                 consumer.accept(toBounds(screen.blockPreviewBounds));
+            }
+            if (screen.presetPanelBounds != null) {
+                consumer.accept(toBounds(screen.presetPanelBounds));
             }
         });
         registry.addExclusionArea(VoidLinkConfigScreen.class, (screen, consumer) -> {
             if (screen.blockPreviewBounds != null) {
                 consumer.accept(toBounds(screen.blockPreviewBounds));
+            }
+            if (screen.presetPanelBounds != null) {
+                consumer.accept(toBounds(screen.presetPanelBounds));
             }
         });
     }
