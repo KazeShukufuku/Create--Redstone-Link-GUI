@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.common.network;
 import java.util.function.Supplier;
 
 import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
+import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -30,7 +31,9 @@ public record CopyToPresetPayload(BlockPos pos, int presetIndex, int revision, I
             ServerPlayer player = context.getSender();
             if (player == null) return;
             if (player.distanceToSqr(payload.pos.getX(), payload.pos.getY(), payload.pos.getZ()) > 64.0) return;
-            FrequencyPresetData.get(player).setPreset(payload.presetIndex, payload.firstFrequency, payload.secondFrequency);
+            if (!FrequencyPresetHelper.copyCurrentFrequencies(player, payload.pos, payload.presetIndex)) {
+                FrequencyPresetData.get(player).setPreset(payload.presetIndex, payload.firstFrequency, payload.secondFrequency);
+            }
             PresetDataSyncPayload.sendTo(player, payload.revision);
         });
         context.setPacketHandled(true);

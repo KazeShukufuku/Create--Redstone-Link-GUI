@@ -2,6 +2,7 @@ package com.ggrgg.createredstonelinkgui.client.screen.widget;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import com.ggrgg.createredstonelinkgui.CreateRedstoneLinkGUI;
@@ -132,10 +133,12 @@ public class FrequencyPresetPanel {
     private final Supplier<Boolean> copyEnabled;
     private final Supplier<ItemStack> firstFrequency;
     private final Supplier<ItemStack> secondFrequency;
+    private final BiConsumer<Integer, ItemStack> frequencyPreviewUpdater;
 
     public FrequencyPresetPanel(int panelX, int panelY, BlockPos linkPos, FrequencyPresetData presetData,
                                 Supplier<Boolean> copyEnabled, Supplier<ItemStack> firstFrequency,
-                                Supplier<ItemStack> secondFrequency) {
+                                Supplier<ItemStack> secondFrequency,
+                                BiConsumer<Integer, ItemStack> frequencyPreviewUpdater) {
         this.panelX = panelX;
         this.panelY = panelY;
         this.linkPos = linkPos;
@@ -143,6 +146,7 @@ public class FrequencyPresetPanel {
         this.copyEnabled = copyEnabled;
         this.firstFrequency = firstFrequency;
         this.secondFrequency = secondFrequency;
+        this.frequencyPreviewUpdater = frequencyPreviewUpdater;
         this.slotBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT * 2);
         this.copyBtnBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT);
         this.pasteBtnBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT);
@@ -309,6 +313,8 @@ public class FrequencyPresetPanel {
                 return true;
             }
             if (isPasteEnabled(row) && pasteBtnBounds.get(row).contains(mx, my)) {
+                frequencyPreviewUpdater.accept(0, presetData.getStack(row, 0));
+                frequencyPreviewUpdater.accept(1, presetData.getStack(row, 1));
                 CreateRedstoneLinkGUI.NETWORK.sendToServer(new PasteFromPresetPayload(linkPos, row));
                 return true;
             }

@@ -140,7 +140,8 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
     /**
      * Handle clicks on frequency slots (0, 1).
      * The item stays on the cursor (ghost slot behavior), allowing the same item
-     * to be placed into multiple slots. Right-click or Q clears the slot.
+     * to be placed into multiple slots. Right-click, Q, or left-click with an
+     * empty cursor clears the slot.
      */
     protected void handleFrequencySlotClick(int slotId, int button, ClickType clickType, Player player) {
         var slot = this.getSlot(slotId);
@@ -156,6 +157,9 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
                 targetStack = carried.copy();
                 targetStack.setCount(1);
                 slot.set(targetStack);
+            } else {
+                // Left-click with an empty cursor: clear the slot
+                slot.set(ItemStack.EMPTY);
             }
         }
 
